@@ -35,11 +35,11 @@ ip_address = '127.0.0.1'
 
 # Create the gpib device. We need a timeout of > 10 PLC (20 ms), because the DMM might reply to a conversion request
 # and unable to reply to a status request during conversion (maximum time 10 PLC)
-fluke5440b = Fluke_5440B(gpib=connection=AsyncGpib(name=0, pad=7))
+fluke5440b = Fluke_5440B(connection=AsyncGpib(name=0, pad=7))
 
 # This example will log resistance data to the console
 async def main():
-    try: 
+    try:
         # No need to explicitely bring up the GPIB connection. This will be done by the Fluke 5440B
         await fluke5440b.connect()
 
