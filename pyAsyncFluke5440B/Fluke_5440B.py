@@ -19,6 +19,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import asyncio
+from decimal import Decimal
 from enum import Enum, Flag
 
 class SeparatorType(Enum):
@@ -52,6 +53,18 @@ class SerialPollFlags(Flag):
     SRQ_ON_ERROR          = 0b100000
     SRQ                   = 0b1000000
 
+class StatusFlags(Flag):
+    VOLTAGE_MODE           = 0b1
+    CURRENT_BOOST_MODE     = 0b10
+    VOLTAGE_BOOST_MODE     = 0b100
+    DIVIDER_ENABLED        = 0b1000
+    INTERNAL_SENSE_ENABLED = 0b10000
+    OUTPUT_ENABLED         = 0b100000
+    INTERNAL_GUARD_ENABLED = 0b1000000
+    REAR_OUTPUT_ENABLED    = 0b10000000
+
+BAUD_RATES_AVAILABLE = (50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600)
+
 class Fluke_5440B:
     @property
     def connection(self):
@@ -61,15 +74,18 @@ class Fluke_5440B:
         self.__conn = connection
 
     async def get_id(self):
-        version = await self._get_software_version()
-        return "Fluke 5440B {version}".format(version=version)
+        version = (await self._get_software_version()).strip()
+        return "Fluke 5440B, software version {version}".format(version=version)
 
     async def connect(self):
         await self.__conn.connect()
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
-        await self.set_terminator(TerminatorType.LF_EOI)    # terminate lines with \n
+        await asyncio.gather(
+            self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
+            self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
+        )
 
     async def disconnect(self):
         await self.__conn.disconnect()
@@ -95,14 +111,14 @@ class Fluke_5440B:
     async def get_terminator(self):
         return TerminatorType(int(await self.query("GTRM")))
 
-    async def set_terminator(self, value):
+    async def __set_terminator(self, value):
         assert isinstance(value, TerminatorType)
         await self.write("STRM {value:d}".format(value=value.value))
 
     async def get_separator(self):
         return SeparatorType(int(await self.query("GSEP")))
 
-    async def set_separator(self, value):
+    async def __set_separator(self, value):
         assert isinstance(value, SeparatorType)
         await self.write("SSEP {value:d}".format(value=value.value))
 
@@ -111,35 +127,41 @@ class Fluke_5440B:
         await self.write("{value}".format(value=value.value))
 
     async def set_output_enabled(self, enabled):
-        if enabled:
-            await self.write("OPER")
-        else:
-            await self.write("STBY")
+        await self.write("OPER" if enabled else "STBY")
 
-    async def set_external_sense(self, enabled):
-        if enabled:
-            await self.write("ESNS")
-        else:
-            await self.write("ISNS")
+    async def set_internal_sense(self, enabled):
+        await self.write("ISNS" if enabled else "ESNS")
 
-    async def set_guard(self, enabled):
-        if enabled:
-            await self.write("EGRD")
-        else:
-            await self.write("IGRD")
+    async def set_internal_guard(self, enabled):
+        await self.write("IGRD" if enabled else "EGRD")
 
     async def get_voltage_limit(self):
-        return await self.query("GVLM")
+        # TODO catch error when in current boost mode
+        return Decimal(await self.query("GVLM"))
 
     async def set_voltage_limit(self, value):
         assert (-1100. <= value <= 1100.)
         pass
 
     async def get_current_limit(self):
-        return await self.query("GCLM")
+        # TODO catch error when in voltage boost mode
+        return Decimal(await self.query("GCLM"))
 
     async def set_current_limit(self, value):
         pass
 
     async def _get_software_version(self):
         return await self.query("GVRS")
+
+    async def get_status(self):
+        return StatusFlags(await self.query("GSTS"))
+
+    async def get_baud_rate(self):
+        return BAUD_RATES_AVAILABLE[int(await self.query("GBDR"))]
+
+    async def set_baud_rate(self, value):
+        assert (value in BAUD_RATES_AVAILABLE)
+        await self.write("SBDR {value:d}".format(value=value))
+
+    async def set_enable_rs232(self, enabled):
+        await self.write("MONY" if enabled else "MONN")
