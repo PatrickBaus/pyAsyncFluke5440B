@@ -246,7 +246,7 @@ class Fluke_5440B:
                 self.__logger.debug("Selftest status: {status}".format(status=state))
                 if state == State.IDLE:
                     break
-                asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
         self.__logger.debug("Digital selftest done.")
 
     async def selftest_hv(self):
