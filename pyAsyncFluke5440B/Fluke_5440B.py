@@ -202,6 +202,13 @@ class Fluke_5440B:
     async def set_output_enabled(self, enabled):
         await self.write("OPER" if enabled else "STBY")
 
+    async def set_output(self, value):
+        # Note: should be +-20 if in current boost mode
+        # Note: should be +-1500 in voltage boost mode
+        # Note: should be +-2.2 in divider mode
+        #assert (-1100. <= value <= 1100.)
+        await self.write("SOUT {value:f}".format(value=value))
+
     async def set_internal_sense(self, enabled):
         await self.write("ISNS" if enabled else "ESNS")
 
@@ -213,7 +220,8 @@ class Fluke_5440B:
         return Decimal(await self.query("GVLM"))
 
     async def set_voltage_limit(self, value):
-        assert (-1100. <= value <= 1100.)
+        # Note should be +-1500 in voltage boost mode
+        #assert (-1100. <= value <= 1100.)
         pass
 
     async def get_current_limit(self):
@@ -221,6 +229,9 @@ class Fluke_5440B:
         return Decimal(await self.query("GCLM"))
 
     async def set_current_limit(self, value):
+        # Note: should be +-0.065 in voltage mode
+        # Note: should be +-0.10 in voltage boost mode
+        #assert (-20. <= value <= 20.)
         pass
 
     async def _get_software_version(self):
@@ -234,50 +245,122 @@ class Fluke_5440B:
 
     async def get_state(self):
         try:
-            result = int(await self.query("GDNG"))
+            return State(int(await self.__get_state()))
         except ValueError as e:
             raise InvalidStateError(e.args[0], result) from None
 
-    async def selftest_analog(self):
-        await self.write("TSTA")
+    async def __get_state(self):
+        return await self.query("GDNG")
 
     async def selftest_digital(self):
         state = await self.get_state()
         if state == State.IDLE:
-            self.__logger.debug("Running digital selftest. This takes about 4.2 seconds")
+            self.__logger.info("Running digital selftest. This takes about 4.2 seconds")
             await self.write("TSTD")
 
             # Wait until we are done
-            try:
-                while "testing":
-                    new_state = await self.get_state()
-                    if new_state not in (State.IDLE, State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU):
-                        # Raise an error, which will be caught later and returned as an error code
-                        raise InvalidStateError("ValueError: {value} is not a valid State".format(value=new_state.value), new_state.value)
-                    if new_state != state:
-                        state = new_state
-                        self.__logger.debug("Selftest status: {status}".format(status=state))
-                        if state == State.IDLE:
-                            break
-                    await asyncio.sleep(0.1)
-                self.__logger.debug("Digital selftest passed.")
-                return state.value
-            except InvalidStateError as e:
-                # We received an error code
-                self.__logger.debug("Digital selftest failed.")
-                return e.value
+            while "testing":
+                new_state = await self.__get_state()
+                try:
+                    # test if it is an error code or state
+                    # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
+                    # return a non zero result during test, which will be in the buffer, so the final result might be
+                    # either the $errorcode, $errorcode\n$state or something else.
+                    new_state = State(new_state)
+                except ValueError:
+                    self.__logger.warning("Digital selftest failed.")
+                    return new_state
+
+                if new_state not in (State.IDLE, State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU):
+                    self.__logger.warning("Digital selftest failed.")
+                    return new_state.value
+
+                if new_state != state:
+                    state = new_state
+                    self.__logger.debug("Selftest status: {status}".format(status=state))
+                    if state == State.IDLE:
+                        break
+                await asyncio.sleep(0.1)
+            self.__logger.info("Digital selftest passed.")
+            return state.value
+        else:
+            # TODO: Raise an error
+            pass
+
+    async def selftest_analog(self):
+        state = await self.get_state()
+        if state == State.IDLE:
+            self.__logger.info("Running analog selftest. This takes about 4.2 seconds")
+            await self.write("TSTA")
+
+            # Wait until we are done
+            while "testing":
+                new_state = await self.__get_state()
+                try:
+                    # test if it is an error code or state
+                    # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
+                    # return a non zero result during test, which will be in the buffer, so the final result might be
+                    # either the $errorcode, $errorcode\n$state or something else.
+                    new_state = State(new_state)
+                except ValueError:
+                    self.__logger.warning("Analog selftest failed.")
+                    return new_state
+
+                if new_state not in (State.IDLE, State.SELF_TEST_LOW_VOLTAGE, State.SELF_TEST_OVEN):
+                    self.__logger.warning("Analog selftest failed.")
+                    return new_state.value
+
+                if new_state != state:
+                    state = new_state
+                    self.__logger.debug("Selftest status: {status}".format(status=state))
+                    if state == State.IDLE:
+                        break
+                await asyncio.sleep(0.1)
+            self.__logger.info("Analog selftest passed.")
+            return state.value
         else:
             # TODO: Raise an error
             pass
 
     async def selftest_hv(self):
-        await self.write("TSTH")
+        state = await self.get_state()
+        if state == State.IDLE:
+            self.__logger.info("Running high voltage selftest. This takes about 4.2 seconds")
+            await self.write("TSTH")
+
+            # Wait until we are done
+            while "testing":
+                new_state = await self.__get_state()
+                try:
+                    # test if it is an error code or state
+                    # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
+                    # return a non zero result during test, which will be in the buffer, so the final result might be
+                    # either the $errorcode, $errorcode\n$state or something else.
+                    new_state = State(new_state)
+                except ValueError:
+                    self.__logger.warning("High voltage selftest failed.")
+                    return new_state
+
+                if new_state not in (State.IDLE, State.SELF_TEST_HIGH_VOLTAGE, State.SELF_TEST_OVEN):
+                    self.__logger.warning("High voltage selftest failed.")
+                    return new_state.value
+
+                if new_state != state:
+                    state = new_state
+                    self.__logger.debug("Selftest status: {status}".format(status=state))
+                    if state == State.IDLE:
+                        break
+                await asyncio.sleep(0.1)
+            self.__logger.info("High voltage selftest passed.")
+            return state.value
+        else:
+            # TODO: Raise an error
+            pass
 
     async def selftest_all(self):
-        # TODO: wait for the results
-        await self.write("TSTA")
-        await self.write("TSTD")
-        await self.write("TSTH")
+        await self.selftest_digital()
+        await self.selftest_analog()
+        await self.selftest_hv()
 
     async def get_baud_rate(self):
         return BAUD_RATES_AVAILABLE[int(await self.query("GBDR"))]
