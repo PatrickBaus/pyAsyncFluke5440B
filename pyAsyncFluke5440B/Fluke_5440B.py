@@ -43,7 +43,7 @@ class SerialPollFlags(Flag):
     SRQ_ON_ERROR          = 0b100000
     SRQ                   = 0b1000000
 
-class Fluke_5440b:
+class Fluke_5440B:
     @property
     def connection(self):
         return self.__conn
@@ -56,9 +56,9 @@ class Fluke_5440b:
 
     async def connect(self):
         await self.__conn.connect()
-        if hasattr(self.__gpib, "set_eot"):
+        if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
-            await self.__gpib.set_eot(False)
+            await self.__conn.set_eot(False)
         await self.set_terminator(TerminatorType.LF_EOI)    # terminate lines with \n
 
     async def disconnect(self):
