@@ -252,7 +252,7 @@ class Fluke_5440B:
         try:
             while "testing":
                 new_state = await self.get_state()
-                if new_state is not in (State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU)
+                if new_state not in (State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU)
                     # Raise an error, which will be caught later and returned as an error code
                     raise InvalidStateError("ValueError: {value} is not a valid State".format(value=new_state.value), new_state.value)
                 if new_state != state:
