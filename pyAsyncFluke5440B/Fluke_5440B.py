@@ -23,6 +23,14 @@ from decimal import Decimal
 from enum import Enum, Flag
 import logging
 
+class InvalidStateError(ValueError):
+    @property
+    def value(self):
+        return self.args[1]
+
+    def __init__(self, message, value):
+        self.args = [message, value]
+
 class SeparatorType(Enum):
     COMMA = 0
     COLON = 1
@@ -225,13 +233,15 @@ class Fluke_5440B:
         return ErrorCode(int(await self.query("GERR")))
 
     async def get_state(self):
-        return State(int(await self.query("GDNG")))
+        try:
+            result = int(await self.query("GDNG"))
+        except ValueError as e:
+            raise InvalidStateError(e.args[0], result) from None
 
     async def selftest_analog(self):
         await self.write("TSTA")
 
     async def selftest_digital(self):
-        # TODO: get the error
         state = await self.get_state()
         if state == State.IDLE:
             self.__logger.debug("Running digital selftest. This takes about 4.2 seconds")
@@ -239,15 +249,24 @@ class Fluke_5440B:
         else:
             # TODO: Raise an error
             pass
-        while "testing":
-            new_state = await self.get_state()
-            if new_state != state:
-                state = new_state
-                self.__logger.debug("Selftest status: {status}".format(status=state))
-                if state == State.IDLE:
-                    break
-            await asyncio.sleep(0.1)
-        self.__logger.debug("Digital selftest done.")
+        try:
+            while "testing":
+                new_state = await self.get_state()
+                if new_state is not in (State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU)
+                    # Raise an error, which will be caught later and returned as an error code
+                    raise InvalidStateError("ValueError: {value} is not a valid State".format(value=new_state.value), new_state.value)
+                if new_state != state:
+                    state = new_state
+                    self.__logger.debug("Selftest status: {status}".format(status=state))
+                    if state == State.IDLE:
+                        break
+                await asyncio.sleep(0.1)
+            self.__logger.debug("Digital selftest passed.")
+            return state.value
+        except InvalidStateError as e:
+            # We received an error code
+            self.__logger.debug("Digital selftest failed.")
+            return e.value
 
     async def selftest_hv(self):
         await self.write("TSTH")
