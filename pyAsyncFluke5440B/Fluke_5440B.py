@@ -74,7 +74,7 @@ class Fluke_5440B:
         await self.__conn.disconnect()
 
     async def write(self, cmd):
-        assert isinstance(value, str) or isinstance(value, bytes)
+        assert isinstance(cmd, str) or isinstance(cmd, bytes)
         try:
             cmd = cmd.encode("ascii")
         except AttributeError:
@@ -108,3 +108,33 @@ class Fluke_5440B:
     async def set_mode(self, value):
         assert isinstance(value, ModeType)
         await self.write("{value}".format(value=value.value))
+
+    async def set_output_enabled(self, enabled):
+        if enabled:
+            await self.write("OPER")
+        else:
+            await self.write("STBY")
+
+    async def set_external_sense(self, enabled):
+        if enabled:
+            await self.write("ESNS")
+        else:
+            await self.write("ISNS")
+
+    async def set_guard(self, enabled):
+        if enabled:
+            await self.write("EGRD")
+        else:
+            await self.write("IGRD")
+
+    async def get_voltage_limit(self):
+        return await self.query("GVLM")
+
+    async def set_voltage_limit(self, value):
+        pass
+
+    async def get_current_limit(self):
+        return await self.query("GCLM")
+
+    async def set_current_limit(self, value):
+        pass
