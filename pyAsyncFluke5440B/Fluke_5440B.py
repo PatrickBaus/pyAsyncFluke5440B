@@ -243,7 +243,7 @@ class Fluke_5440B:
             new_state = await self.get_state()
             if new_state != state:
                 state = new_state
-                self.__logger.debug("Selftest status: {status}".format(state=state))
+                self.__logger.debug("Selftest status: {status}".format(status=state))
                 if state == State.IDLE:
                     break
                 asyncio.sleep(0.1)
