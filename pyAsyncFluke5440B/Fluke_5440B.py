@@ -61,7 +61,8 @@ class Fluke_5440B:
         self.__conn = connection
 
     async def get_id(self):
-        return "Fluke 5440B"
+        version = await self._get_software_version()
+        return "Fluke 5440B {version}".format(version=version)
 
     async def connect(self):
         await self.__conn.connect()
@@ -131,6 +132,7 @@ class Fluke_5440B:
         return await self.query("GVLM")
 
     async def set_voltage_limit(self, value):
+        assert (-1100. <= value <= 1100.)
         pass
 
     async def get_current_limit(self):
@@ -138,3 +140,6 @@ class Fluke_5440B:
 
     async def set_current_limit(self, value):
         pass
+
+    async def _get_software_version(self):
+        return await self.query("GVRS")
