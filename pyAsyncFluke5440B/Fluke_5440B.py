@@ -232,19 +232,19 @@ class Fluke_5440B:
 
     async def selftest_digital(self):
         # TODO: get the error
-        status = await self.get_status()
-        if status == State.IDLE:
+        state = await self.get_state()
+        if state == State.IDLE:
             self.__logger.debug("Running digital selftest. This takes about 4.2 seconds")
             await self.write("TSTD")
         else:
             # TODO: Raise an error
             pass
         while "testing":
-            new_status = await self.get_status()
-            if new_status != status:
-                status = new_status
-                self.__logger.debug("Selftest status: {status}".format(status=status))
-                if status == State.IDLE:
+            new_state = await self.get_state()
+            if new_state != state:
+                state = new_state
+                self.__logger.debug("Selftest status: {status}".format(state=state))
+                if state == State.IDLE:
                     break
                 asyncio.sleep(0.1)
         self.__logger.debug("Digital selftest done.")
