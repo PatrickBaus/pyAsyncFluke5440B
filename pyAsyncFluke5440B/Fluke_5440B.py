@@ -155,6 +155,7 @@ class Fluke_5440B:
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
+        await self.__conn.clear()
         await asyncio.gather(
             self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
             self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
@@ -179,7 +180,7 @@ class Fluke_5440B:
         return await self.read()
 
     async def reset(self):
-        await self.__write("RESET")
+        await self.write("RESET")
 
     async def get_terminator(self):
         return TerminatorType(int(await self.query("GTRM")))
@@ -201,6 +202,9 @@ class Fluke_5440B:
 
     async def set_output_enabled(self, enabled):
         await self.write("OPER" if enabled else "STBY")
+
+    async def get_output(self):
+        return Decimal(await self.query("GOUT"))
 
     async def set_output(self, value):
         # Note: should be +-20 if in current boost mode
@@ -371,3 +375,6 @@ class Fluke_5440B:
 
     async def set_enable_rs232(self, enabled):
         await self.write("MONY" if enabled else "MONN")
+
+    async def get_calibration_constants(self):
+        pass
