@@ -21,6 +21,7 @@
 import asyncio
 from decimal import Decimal
 from enum import Enum, Flag
+import logging
 
 class SeparatorType(Enum):
     COMMA = 0
@@ -37,6 +38,68 @@ class ModeType(Enum):
     NORMAL = "BSTO"
     VOLTAGE_BOOST = "BSTV"
     CURRENT_BOOST = "BSTC"
+
+class ErrorCode(Enum):
+    NONE                              = 0
+    BOOST_INTERFACE_CONNECTION_ERROR  = 144
+    BOOST_INTERFACE_MISSING           = 145
+    BOOST_INTERFACE_VOLTAGE_TRIP      = 146
+    BOOST_INTERFACE_CURRENT_TRIP      = 147
+    GPIB_HANDSHAKE_ERROR              = 152
+    TERMINATOR_ERROR                  = 153
+    SEPARATOR_ERROR                   = 154
+    UNKNOWN_COMMAND                   = 155
+    INVALID_PARAMTER                  = 156
+    BUFFER_OVERFLOW                   = 157
+    INVALID_CHARACTER                 = 158
+    RS232_ERROR                       = 160
+    PARAMTER_OUT_OF_RANGE             = 168
+    OUTPUT_OUTSIDE_LIMITS             = 169
+    LIMIT_OUT_OF_RANGE                = 170
+    DIVIDER_OUT_OF_RANGE              = 171
+    INVALID_SENSE_MODE                = 172
+    INVALID_GUARD_MODE                = 173
+    INVALID_COMMAND                   = 175
+
+class State(Enum):
+    IDLE                     = 0
+    CALIBRATING_ADC          = 16
+    ZEROING_+10V             = 32
+    ZEROING_-10V             = 33
+    ZEROING_+20V             = 34
+    ZEROING_-20V             = 35
+    ZEROING_+250V            = 36
+    ZEROING_-250V            = 37
+    ZEROING_+1000V           = 38
+    ZEROING_-1000V           = 39
+    CALIBRATING_GAIN_+10V    = 48
+    CALIBRATING_GAIN_+20V    = 49
+    CALIBRATING_GAIN_+HV     = 50
+    CALIBRATING_GAIN_-HV     = 51
+    CALIBRATING_GAIN_-20V    = 52
+    CALIBRATING_GAIN_-10V    = 53
+    EXT_CAL_10V              = 64
+    EXT_CAL_20V              = 65
+    EXT_CAL_250V             = 66
+    EXT_CAL_1000V            = 67
+    EXT_CAL_2V               = 68
+    EXT_CAL_02V              = 69
+    EXT_CAL_10V_NULL         = 80
+    EXT_CAL_20V_NULL         = 81
+    EXT_CAL_250V_NULL        = 82
+    EXT_CAL_1000V_NULL       = 83
+    EXT_CAL_2V_NULL          = 84
+    EXT_CAL_02V_NULL         = 85
+    CAL_N1_N2_RATIO          = 96
+    SELF_TEST_MAIN_CPU       = 112
+    SELF_TEST_FRONTPANEL_CPU = 113
+    SELF_TEST_GUARD_CPU      = 114
+    SELF_TEST_LOW_VOLTAGE    = 128
+    SELF_TEST_HIGH_VOLTAGE   = 129
+    SELF_TEST_OVEN           = 130
+    PRINTING                 = 208
+    WRITING_TO_NVRAM         = 224
+    RESETTING                = 240
 
 class SrqMask(Flag):
     NONE                = 0b0
@@ -72,6 +135,8 @@ class Fluke_5440B:
 
     def __init__(self, connection):
         self.__conn = connection
+        
+        self.__logger = logging.getLogger(__name__)
 
     async def get_id(self):
         version = (await self._get_software_version()).strip()
@@ -154,7 +219,44 @@ class Fluke_5440B:
         return await self.query("GVRS")
 
     async def get_status(self):
-        return StatusFlags(await self.query("GSTS"))
+        return StatusFlags(int(await self.query("GSTS")))
+
+    async def get_error(self):
+        return ErrorCode(int(await self.query("GERR")))
+
+    async def get_state(self):
+        return State(int(await self.query("GDNG")))
+
+    async def selftest_analog(self):
+        await self.write("TSTA")
+
+    async def selftest_digital(self):
+        # TODO: get the error
+        status = await self.get_status()
+        if status == State.IDLE:
+            self.__logger.debug("Running digital selftest. This takes about 4.2 seconds")
+            await self.write("TSTD")
+        else:
+            # TODO: Raise an error
+            pass
+        while "testing":
+            new_status = await self.get_status()
+            if new_status != status:
+                status = new_status
+                self.__logger.debug("Selftest status: {status}".format(status=status))
+                if status == State.IDLE:
+                    break
+                asyncio.sleep(0.1)
+        self.__logger.debug("Digital selftest done.")
+
+    async def selftest_hv(self):
+        await self.write("TSTH")
+
+    async def selftest_all(self):
+        # TODO: wait for the results
+        await self.write("TSTA")
+        await self.write("TSTD")
+        await self.write("TSTH")
 
     async def get_baud_rate(self):
         return BAUD_RATES_AVAILABLE[int(await self.query("GBDR"))]
