@@ -75,7 +75,7 @@ class Fluke_5440B:
         return await self.read()
 
     async def get_terminator(self):
-        return TerminatorType(await self.query("GSEP"))
+        return TerminatorType(int(await self.query("GSEP")))
 
     async def set_terminator(self, value):
         assert isinstance(value, TerminatorType)
