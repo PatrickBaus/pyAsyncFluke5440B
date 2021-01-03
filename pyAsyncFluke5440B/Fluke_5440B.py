@@ -21,12 +21,21 @@
 import asyncio
 from enum import Enum, Flag
 
+class SeparatorType(Enum):
+    COMMA = 0
+    COLON = 1
+
 class TerminatorType(Enum):
     EOI       = 0
     CR_LF_EOI = 1
     LF_EOI    = 2
     CR_LF     = 3
     LF        = 4
+
+class ModeType(Enum):
+    NORMAL = "BSTO"
+    VOLTAGE_BOOST = "BSTV"
+    CURRENT_BOOST = "BSTC"
 
 class SrqMask(Flag):
     NONE                = 0b0
@@ -65,6 +74,11 @@ class Fluke_5440B:
         await self.__conn.disconnect()
 
     async def write(self, cmd):
+        assert isinstance(value, str) or isinstance(value, bytes)
+        try:
+            cmd = cmd.encode("ascii")
+        except AttributeError:
+            pass    # cmd is already a bytestring
         await self.__conn.write(cmd)
 
     async def read(self):
@@ -74,9 +88,23 @@ class Fluke_5440B:
         await self.write(cmd)
         return await self.read()
 
+    async def reset(self):
+        await self.__write("RESET")
+
     async def get_terminator(self):
-        return TerminatorType(int(await self.query("GSEP")))
+        return TerminatorType(int(await self.query("GTRM")))
 
     async def set_terminator(self, value):
         assert isinstance(value, TerminatorType)
-        await self.write("STRM{value:d}".format(value=value.value).encode('ascii'))
+        await self.write("STRM {value:d}".format(value=value.value))
+
+    async def get_separator(self):
+        return SeparatorType(int(await self.query("GSEP")))
+
+    async def set_separator(self, value):
+        assert isinstance(value, SeparatorType)
+        await self.write("SSEP {value:d}".format(value=value.value))
+
+    async def set_mode(self, value):
+        assert isinstance(value, ModeType)
+        await self.write("{value}".format(value=value.value))
