@@ -370,7 +370,7 @@ class Fluke_5440B:
                     self.__logger.warning("High voltage selftest failed. Code: {code}.".format(code=new_state))
                     return new_state
 
-                if new_state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE, State.SELF_TEST_OVEN):
+                if new_state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE):
                     self.__logger.warning("High voltage selftest failed. Code: {code}.".format(code=new_state.value))
                     return new_state.value
 
@@ -394,6 +394,49 @@ class Fluke_5440B:
 
         result = await self.selftest_hv()
         return result
+
+    async def acal(self):
+        async with self.__lock:
+            await self.__wait_for_idle()
+            self.__logger.info("Running internal calibration. This will take about 6.5 minutes.")
+            await self.write("CALI")
+
+            state = State.IDLE
+            # Wait until we are done
+            while "calibrating":
+                new_state = await self.get_state()
+
+                if new_state not in (
+                    State.IDLE,
+                    State.CALIBRATING_ADC,
+                    State.ZEROING_10V_pos,
+                    State.CAL_N1_N2_RATIO,
+                    State.ZEROING_10V_neg,
+                    State.ZEROING_20V_pos,
+                    State.ZEROING_20V_neg,
+                    State.ZEROING_250V_pos,
+                    State.ZEROING_250V_neg,
+                    State.ZEROING_1000V_pos,
+                    State.ZEROING_1000V_neg,
+                    State.CALIBRATING_GAIN_10V_pos,
+                    State.CALIBRATING_GAIN_20V_pos,
+                    State.CALIBRATING_GAIN_HV_pos,
+                    State.CALIBRATING_GAIN_HV_neg,
+                    State.CALIBRATING_GAIN_20V_neg,
+                    State.CALIBRATING_GAIN_10V_neg,
+                    State.WRITING_TO_NVRAM,
+                ):
+                    self.__logger.warning("Invalid code: {code}.".format(code=new_state.value))
+#                    return new_state.value
+
+                if new_state != state:
+                    state = new_state
+                    if state == State.IDLE:
+                        break
+                    self.__logger.info("Calibration status: {status}".format(status=state))
+                await asyncio.sleep(1.0)
+            self.__logger.info("Internal calibration done.")
+            return state.value
 
     async def get_baud_rate(self):
         return BAUD_RATES_AVAILABLE[int(await self.query("GBDR"))]
