@@ -158,16 +158,12 @@ class Fluke_5440B:
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
-        await asyncio.gather(
-            self.__conn.set_auto_polling(True),             # Enable RQS by auto polling ibsta on SRQ
-            self.serial_poll(),                             # clear the SRQ bit
-            self.get_state(),                               # clear the DOING_STATE_CHANGE bit
-        )
-        await asyncio.gather(
-            self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
-            self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
-            self.set_srq_mask(SrqMask.NONE),                # Disable interrupts
-        )
+        await self.__conn.set_auto_polling(True)             # Enable RQS by auto polling ibsta on SRQ
+        await self.serial_poll()                             # clear the SRQ bit
+        await self.get_state()                               # clear the DOING_STATE_CHANGE bit
+        await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
+        await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
+        await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
 
     async def disconnect(self):
         try:
@@ -206,11 +202,9 @@ class Fluke_5440B:
             try:
                 await self.__wait_for_idle()
             finally:
-                await asyncio.gather(
-                    self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
-                    self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
-                    self.set_srq_mask(SrqMask.NONE),                # Disable interrupts
-                )
+                await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
+                await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
+                await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
 
     async def remote(self):
         await self.__conn.remote_enable(True)
@@ -224,6 +218,7 @@ class Fluke_5440B:
         """
         while (await self.get_state()) != State.IDLE:
             await self.__conn.wait(1 << 11)    # Wait for RQS
+            await self.serial_poll()           # Clear the SRQ bit
 
     async def get_terminator(self):
         async with self.__lock:
@@ -232,13 +227,7 @@ class Fluke_5440B:
     async def __set_terminator(self, value):
         assert isinstance(value, TerminatorType)
         async with self.__lock:
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for each test step
-            try:
-                await self.write("STRM {value:d}".format(value=value.value))
-                await self.__conn.wait(1 << 11)    # Wait for RQS
-                await self.serial_poll()           # Clear the SRQ bit
-            finally:
-                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
+            await self.write("STRM {value:d}".format(value=value.value))
 
     async def get_separator(self):
         return SeparatorType(int(await self.query("GSEP")))
@@ -246,13 +235,7 @@ class Fluke_5440B:
     async def __set_separator(self, value):
         assert isinstance(value, SeparatorType)
         async with self.__lock:
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for each test step
-            try:
-                await self.write("SSEP {value:d}".format(value=value.value))
-                await self.__conn.wait(1 << 11)    # Wait for RQS
-                await self.serial_poll()           # Clear the SRQ bit
-            finally:
-                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
+            await self.write("SSEP {value:d}".format(value=value.value))
 
     async def set_mode(self, value):
         assert isinstance(value, ModeType)
