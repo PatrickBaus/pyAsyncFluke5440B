@@ -158,10 +158,10 @@ class Fluke_5440B:
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
-        await self.reset()
         await asyncio.gather(
             self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
             self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
+            self.set_srq_mask(SrqMask.NONE),                # Disable interrupts
         )
 
     async def disconnect(self):
@@ -189,7 +189,7 @@ class Fluke_5440B:
 
     async def reset(self):
         async with self.__lock:
-            # We do not call "RESET", because a DCL will do the same and additionall circumvents the input buffer
+            # We do not send "RESET", because a DCL will do the same and additionally circumvents the input buffer
             await self.__conn.clear()
             await self.__wait_for_state_change()
             await self.__wait_for_idle()
@@ -474,3 +474,10 @@ class Fluke_5440B:
 
     async def serial_poll(self):
         return SerialPollFlags(int(await self.__conn.serial_poll()))
+
+    async def set_srq_mask(self, value):
+        assert isinstance(value, SrqMask)
+        await self.write("SSRQ {value:d}".format(value=value.value))
+
+    async def get_srq_mask(self):
+        return SrqMask(int(await self.query("GSRQ")))
