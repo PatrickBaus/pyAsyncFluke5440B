@@ -159,6 +159,8 @@ class Fluke_5440B:
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
         await asyncio.gather(
+            self.serial_poll(),                             # clear the SRQ bit
+            self.get_state()                                # clear the DOING_STATE_CHANGE bit
             self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
             self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
             self.set_srq_mask(SrqMask.NONE),                # Disable interrupts
@@ -295,30 +297,29 @@ class Fluke_5440B:
 
     async def selftest_digital(self):
         async with self.__lock:
-            await self.__wait_for_idle()
+            await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
             self.__logger.info("Running digital selftest. This takes about 5 seconds.")
             await self.write("TSTD")
 
             state = State.IDLE
             # Wait until we are done
             while "testing":
-                new_state = await self.__get_state()
-                try:
-                    # test if it is an error code or state
-                    # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
-                    # return a non zero result during test, which will be in the buffer, so the final result might be
-                    # either the $errorcode, $errorcode\n$state or something else.
-                    new_state = State(int(new_state))
-                except ValueError:
-                    self.__logger.warning("Digital selftest failed.")
-                    return new_state
+                if (await self.serial_poll()) & SerialPollFlags.DOING_STATE_CHANGE:
+                    state = await self.__get_state()
+                    try:
+                        # test if it is an error code or state
+                        # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
+                        # return a non zero result during test, which will be in the buffer, so the final result might be
+                        # either the $errorcode, $errorcode\n$state or something else.
+                        state = State(int(state))
+                    except ValueError:
+                        self.__logger.warning("Digital selftest failed. Code: {code}.".format(code=state))
+                        return state
 
-                if new_state not in (State.IDLE, State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU):
-                    self.__logger.warning("Digital selftest failed.")
-                    return new_state.value
+                    if state not in (State.IDLE, State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU):
+                        self.__logger.warning("Digital selftest failed. Code: {code}.".format(code=state.value))
+                        return state.value
 
-                if new_state != state:
-                    state = new_state
                     if state == State.IDLE:
                         break
                     self.__logger.info("Selftest status: {status}".format(status=state))
