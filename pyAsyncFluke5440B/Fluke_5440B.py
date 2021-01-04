@@ -143,6 +143,7 @@ class Fluke_5440B:
 
     def __init__(self, connection):
         self.__conn = connection
+        self.__lock = None
 
         self.__logger = logging.getLogger(__name__)
 
@@ -151,11 +152,17 @@ class Fluke_5440B:
         return "Fluke 5440B, software version {version}".format(version=version)
 
     async def connect(self):
+        self.__lock = asyncio.Lock()
+
         await self.__conn.connect()
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
-        await self.__conn.clear()
+        async with self.__lock:
+            await self.__conn.clear()
+            await self.__wait_for_state_change()
+            await self.__wait_for_idle()
+
         await asyncio.gather(
             self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
             self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
@@ -177,33 +184,45 @@ class Fluke_5440B:
         await self.__conn.write(cmd)
 
     async def read(self):
-        return (await self.__conn.read())[:-1].decode("utf-8")  # strip \n
+        result = (await self.__conn.read())[:-1].decode("utf-8").split(",")  # strip \n and split at the seprator
+        return result[0] if len(result) == 1 else result
 
     async def query(self, cmd):
         await self.write(cmd)
         return await self.read()
 
     async def reset(self):
-        await self.write("RESET")
-        await self.__wait_for_state_change()
+        async with self.__lock:
+            await self.write("RESET")
+            await self.__wait_for_state_change()
+            await self.__wait_for_idle()
 
     async def __wait_for_state_change(self):
-        while (await self.serial_poll() & SerialPollFlags.DOING_STATE_CHANGE):
-            await asyncio.sleep(0.1)
+        while (await self.serial_poll()) & SerialPollFlags.DOING_STATE_CHANGE:
+            await asyncio.sleep(0.5)
+
+    async def __wait_for_idle(self):
+        while (await self.get_state()) != State.IDLE:
+            await asyncio.sleep(0.5)
 
     async def get_terminator(self):
-        return TerminatorType(int(await self.query("GTRM")))
+        async with self.__lock:
+            return TerminatorType(int(await self.query("GTRM")))
 
     async def __set_terminator(self, value):
         assert isinstance(value, TerminatorType)
-        await self.write("STRM {value:d}".format(value=value.value))
+        async with self.__lock:
+            await self.write("STRM {value:d}".format(value=value.value))
+            await self.__wait_for_state_change()
 
     async def get_separator(self):
         return SeparatorType(int(await self.query("GSEP")))
 
     async def __set_separator(self, value):
         assert isinstance(value, SeparatorType)
-        await self.write("SSEP {value:d}".format(value=value.value))
+        async with self.__lock:
+            await self.write("SSEP {value:d}".format(value=value.value))
+            await self.__wait_for_state_change()
 
     async def set_mode(self, value):
         assert isinstance(value, ModeType)
@@ -266,11 +285,12 @@ class Fluke_5440B:
         return await self.query("GDNG")
 
     async def selftest_digital(self):
-        state = await self.get_state()
-        if state == State.IDLE:
-            self.__logger.info("Running digital selftest. This takes about 4.2 seconds")
+        async with self.__lock:
+            await self.__wait_for_idle()
+            self.__logger.info("Running digital selftest. This takes about 5 seconds.")
             await self.write("TSTD")
 
+            state = State.IDLE
             # Wait until we are done
             while "testing":
                 new_state = await self.__get_state()
@@ -279,7 +299,7 @@ class Fluke_5440B:
                     # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
                     # return a non zero result during test, which will be in the buffer, so the final result might be
                     # either the $errorcode, $errorcode\n$state or something else.
-                    new_state = State(new_state)
+                    new_state = State(int(new_state))
                 except ValueError:
                     self.__logger.warning("Digital selftest failed.")
                     return new_state
@@ -290,22 +310,20 @@ class Fluke_5440B:
 
                 if new_state != state:
                     state = new_state
-                    self.__logger.debug("Selftest status: {status}".format(status=state))
                     if state == State.IDLE:
                         break
+                    self.__logger.info("Selftest status: {status}".format(status=state))
                 await asyncio.sleep(0.1)
             self.__logger.info("Digital selftest passed.")
             return state.value
-        else:
-            # TODO: Raise an error
-            pass
 
     async def selftest_analog(self):
-        state = await self.get_state()
-        if state == State.IDLE:
-            self.__logger.info("Running analog selftest. This takes about 4.2 seconds")
+        async with self.__lock:
+            await self.__wait_for_idle()
+            self.__logger.info("Running analog selftest. This takes about 4 minutes.")
             await self.write("TSTA")
 
+            state = State.IDLE
             # Wait until we are done
             while "testing":
                 new_state = await self.__get_state()
@@ -314,33 +332,31 @@ class Fluke_5440B:
                     # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
                     # return a non zero result during test, which will be in the buffer, so the final result might be
                     # either the $errorcode, $errorcode\n$state or something else.
-                    new_state = State(new_state)
+                    new_state = State(int(new_state))
                 except ValueError:
-                    self.__logger.warning("Analog selftest failed.")
+                    self.__logger.warning("Analog selftest failed. Code: {code}.".format(code=new_state))
                     return new_state
 
-                if new_state not in (State.IDLE, State.SELF_TEST_LOW_VOLTAGE, State.SELF_TEST_OVEN):
-                    self.__logger.warning("Analog selftest failed.")
+                if new_state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_LOW_VOLTAGE, State.SELF_TEST_OVEN):
+                    self.__logger.warning("Analog selftest failed. Code: {code}.".format(code=new_state.value))
                     return new_state.value
 
                 if new_state != state:
                     state = new_state
-                    self.__logger.debug("Selftest status: {status}".format(status=state))
                     if state == State.IDLE:
                         break
-                await asyncio.sleep(0.1)
+                    self.__logger.info("Selftest status: {status}".format(status=state))
+                await asyncio.sleep(5.0)
             self.__logger.info("Analog selftest passed.")
             return state.value
-        else:
-            # TODO: Raise an error
-            pass
 
     async def selftest_hv(self):
-        state = await self.get_state()
-        if state == State.IDLE:
-            self.__logger.info("Running high voltage selftest. This takes about 4.2 seconds")
+        async with self.__lock:
+            await self.__wait_for_idle()
+            self.__logger.info("Running high voltage selftest. This takes about 1 minute")
             await self.write("TSTH")
 
+            state = State.IDLE
             # Wait until we are done
             while "testing":
                 new_state = await self.__get_state()
@@ -349,31 +365,35 @@ class Fluke_5440B:
                     # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
                     # return a non zero result during test, which will be in the buffer, so the final result might be
                     # either the $errorcode, $errorcode\n$state or something else.
-                    new_state = State(new_state)
+                    new_state = State(int(new_state))
                 except ValueError:
-                    self.__logger.warning("High voltage selftest failed.")
+                    self.__logger.warning("High voltage selftest failed. Code: {code}.".format(code=new_state))
                     return new_state
 
-                if new_state not in (State.IDLE, State.SELF_TEST_HIGH_VOLTAGE, State.SELF_TEST_OVEN):
-                    self.__logger.warning("High voltage selftest failed.")
+                if new_state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE, State.SELF_TEST_OVEN):
+                    self.__logger.warning("High voltage selftest failed. Code: {code}.".format(code=new_state.value))
                     return new_state.value
 
                 if new_state != state:
                     state = new_state
-                    self.__logger.debug("Selftest status: {status}".format(status=state))
                     if state == State.IDLE:
                         break
-                await asyncio.sleep(0.1)
+                    self.__logger.info("Selftest status: {status}".format(status=state))
+                await asyncio.sleep(2.0)
             self.__logger.info("High voltage selftest passed.")
             return state.value
-        else:
-            # TODO: Raise an error
-            pass
 
     async def selftest_all(self):
-        await self.selftest_digital()
-        await self.selftest_analog()
-        await self.selftest_hv()
+        result = await self.selftest_digital()
+        if result != 0:
+            return result
+
+        result = await self.selftest_analog()
+        if result != 0:
+            return result
+
+        result = await self.selftest_hv()
+        return result
 
     async def get_baud_rate(self):
         return BAUD_RATES_AVAILABLE[int(await self.query("GBDR"))]
@@ -386,7 +406,32 @@ class Fluke_5440B:
         await self.write("MONY" if enabled else "MONN")
 
     async def get_calibration_constants(self):
-        pass
+        async with self.__lock:
+            # We need to split the query in two parts, because the input buffer of the 5440B is only 127 byte
+            result = await self.query(",".join(["GCAL " + str(i) for i in range(10)]))
+            result += await self.query(",".join(["GCAL " + str(i) for i in range(10,20)]))
+            return {
+                "gain_0.2V": Decimal(result[5]),
+                "gain_2V": Decimal(result[4]),
+                "gain_10V": Decimal(result[0]),
+                "gain_20V": Decimal(result[1]),
+                "gain_250V": Decimal(result[2]),
+                "gain_1000V": Decimal(result[3]),
+                "offset_10V_pos": Decimal(result[6]),
+                "offset_20V_pos": Decimal(result[7]),
+                "offset_250V_pos": Decimal(result[8]),
+                "offset_1000V_pos": Decimal(result[9]),
+                "offset_10V_neg": Decimal(result[10]),
+                "offset_20V_neg": Decimal(result[11]),
+                "offset_250V_neg": Decimal(result[12]),
+                "offset_1000V_neg": Decimal(result[13]),
+                "gain_shift_10V": Decimal(result[14]),
+                "gain_shift_20V": Decimal(result[15]),
+                "gain_shift_250V": Decimal(result[16]),
+                "gain_shift_1000V": Decimal(result[17]),
+                "resolution_ratio": Decimal(result[18]),
+                "a/d_gain": Decimal(result[19]),
+            }
 
     async def serial_poll(self):
         return SerialPollFlags(int(await self.__conn.serial_poll()))
