@@ -170,6 +170,10 @@ class Fluke_5440B:
             cmd = cmd.encode("ascii")
         except AttributeError:
             pass    # cmd is already a bytestring
+        # The calibrator can only buffer 127 byte
+        if len(cmd) > 127:
+            raise ValueError("Command size must be 127 byte or less.")
+
         await self.__conn.write(cmd)
 
     async def read(self):
