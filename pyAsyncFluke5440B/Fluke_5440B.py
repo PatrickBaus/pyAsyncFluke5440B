@@ -165,7 +165,13 @@ class Fluke_5440B:
         )
 
     async def disconnect(self):
-        await self.__conn.disconnect()
+        try:
+            # Return access to the device
+            await self.local()
+        except ConnectionError:
+            pass
+        finally:
+            await self.__conn.disconnect()
 
     async def write(self, cmd):
         assert isinstance(cmd, str) or isinstance(cmd, bytes)
@@ -193,6 +199,12 @@ class Fluke_5440B:
             await self.__conn.clear()
             await self.__wait_for_state_change()
             await self.__wait_for_idle()
+
+    async def remote(self):
+        await self.__conn.remote_enable(True)
+
+    async def local(self):
+        await self.__conn.ibloc()
 
     async def __wait_for_state_change(self):
         while (await self.serial_poll()) & SerialPollFlags.DOING_STATE_CHANGE:
