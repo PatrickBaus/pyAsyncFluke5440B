@@ -159,6 +159,7 @@ class Fluke_5440B:
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
         await asyncio.gather(
+            self.__conn.set_auto_polling(True),             # Enable RQS by auto polling ibsta on SRQ
             self.serial_poll(),                             # clear the SRQ bit
             self.get_state(),                               # clear the DOING_STATE_CHANGE bit
         )
@@ -201,8 +202,15 @@ class Fluke_5440B:
         async with self.__lock:
             # We do not send "RESET", because a DCL will do the same and additionally circumvents the input buffer
             await self.__conn.clear()
-            await self.__wait_for_state_change()
-            await self.__wait_for_idle()
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for state changes
+            try:
+                await self.__wait_for_idle()
+            finally:
+                await asyncio.gather(
+                    self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
+                    self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
+                    self.set_srq_mask(SrqMask.NONE),                # Disable interrupts
+                )
 
     async def remote(self):
         await self.__conn.remote_enable(True)
@@ -210,13 +218,12 @@ class Fluke_5440B:
     async def local(self):
         await self.__conn.ibloc()
 
-    async def __wait_for_state_change(self):
-        while (await self.serial_poll()) & SerialPollFlags.DOING_STATE_CHANGE:
-            await asyncio.sleep(0.5)
-
     async def __wait_for_idle(self):
+        """
+        Make sure, that SrqMask.DOING_STATE_CHANGE is set.
+        """
         while (await self.get_state()) != State.IDLE:
-            await asyncio.sleep(0.5)
+            await self.__conn.wait(1 << 11)    # Wait for RQS
 
     async def get_terminator(self):
         async with self.__lock:
@@ -225,8 +232,13 @@ class Fluke_5440B:
     async def __set_terminator(self, value):
         assert isinstance(value, TerminatorType)
         async with self.__lock:
-            await self.write("STRM {value:d}".format(value=value.value))
-            await self.__wait_for_state_change()
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for each test step
+            try:
+                await self.write("STRM {value:d}".format(value=value.value))
+                await self.__conn.wait(1 << 11)    # Wait for RQS
+                await self.serial_poll()           # Clear the SRQ bit
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def get_separator(self):
         return SeparatorType(int(await self.query("GSEP")))
@@ -234,8 +246,13 @@ class Fluke_5440B:
     async def __set_separator(self, value):
         assert isinstance(value, SeparatorType)
         async with self.__lock:
-            await self.write("SSEP {value:d}".format(value=value.value))
-            await self.__wait_for_state_change()
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for each test step
+            try:
+                await self.write("SSEP {value:d}".format(value=value.value))
+                await self.__conn.wait(1 << 11)    # Wait for RQS
+                await self.serial_poll()           # Clear the SRQ bit
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def set_mode(self, value):
         assert isinstance(value, ModeType)
@@ -299,85 +316,97 @@ class Fluke_5440B:
 
     async def selftest_digital(self):
         async with self.__lock:
-            await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
-            await self.get_error()          # Clear the error flag if set
-            self.__logger.info("Running digital selftest. This takes about 5 seconds.")
-            await self.write("TSTD")
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE | SrqMask.MSG_RDY)   # Enable SRQs to wait for each test step
+            try:
+                await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
+                await self.get_error()          # Clear the error flag if set
+                self.__logger.info("Running digital selftest. This takes about 5 seconds.")
+                await self.write("TSTD")
 
-            # Wait until we are done
-            while "testing":
-                spoll = await self.serial_poll()
-                if spoll & SerialPollFlags.MSG_RDY:
-                    msg = await self.read()
-                    self.__logger.warning("Digital selftest failed with message: {msg}.".format(msg=msg))
-                    return msg
-                if spoll & SerialPollFlags.DOING_STATE_CHANGE:
-                    state = await self.get_state()
-                    if state not in (State.IDLE, State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU):
-                        self.__logger.warning("Digital selftest failed. Invalid state: {state}.".format(state=state))
-                        return state
+                # Wait until we are done
+                while "testing":
+                    await self.__conn.wait(1 << 11)    # Wait for RQS
+                    spoll = await self.serial_poll()
+                    if spoll & SerialPollFlags.MSG_RDY:
+                        msg = await self.read()
+                        self.__logger.warning("Digital selftest failed with message: {msg}.".format(msg=msg))
+                        return msg
+                    if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                        state = await self.get_state()
+                        if state not in (State.IDLE, State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU):
+                            self.__logger.warning("Digital selftest failed. Invalid state: {state}.".format(state=state))
+                            return state
 
-                    if state == State.IDLE:
-                        break
-                    self.__logger.info("Selftest status: {status}".format(status=state))
-                await asyncio.sleep(0.1)
-            self.__logger.info("Digital selftest passed.")
-            return 0    # Return 0 on success
+                        if state == State.IDLE:
+                            break
+                        self.__logger.info("Selftest status: {status}".format(status=state))
+                self.__logger.info("Digital selftest passed.")
+                return 0    # Return 0 on success
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def selftest_analog(self):
         async with self.__lock:
-            await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
-            await self.get_error()          # Clear the error flag if set
-            self.__logger.info("Running analog selftest. This takes about 4 minutes.")
-            await self.write("TSTA")
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE | SrqMask.MSG_RDY)   # Enable SRQs to wait for each test step
+            try:
+                await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
+                await self.get_error()          # Clear the error flag if set
+                self.__logger.info("Running analog selftest. This takes about 4 minutes.")
+                await self.write("TSTA")
 
-            # Wait until we are done
-            while "testing":
-                spoll = await self.serial_poll()
-                if spoll & SerialPollFlags.MSG_RDY:
-                    msg = await self.read()
-                    self.__logger.warning("Analog selftest failed with message: {msg}.".format(msg=msg))
-                    return msg
-                if spoll & SerialPollFlags.DOING_STATE_CHANGE:
-                    state = await self.get_state()
-                    if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_LOW_VOLTAGE, State.SELF_TEST_OVEN):
-                        self.__logger.warning("Analog selftest failed. Invalid state: {state}.".format(state=state))
-                        return state
+                # Wait until we are done
+                while "testing":
+                    await self.__conn.wait(1 << 11)    # Wait for RQS
+                    spoll = await self.serial_poll()
+                    if spoll & SerialPollFlags.MSG_RDY:
+                        msg = await self.read()
+                        self.__logger.warning("Analog selftest failed with message: {msg}.".format(msg=msg))
+                        return msg
+                    if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                        state = await self.get_state()
+                        if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_LOW_VOLTAGE, State.SELF_TEST_OVEN):
+                            self.__logger.warning("Analog selftest failed. Invalid state: {state}.".format(state=state))
+                            return state
 
-                    if state == State.IDLE:
-                        break
-                    self.__logger.info("Selftest status: {status}".format(status=state))
-                await asyncio.sleep(5.0)
-            self.__logger.info("Analog selftest passed.")
-            return 0    # Return 0 on success
+                        if state == State.IDLE:
+                            break
+                        self.__logger.info("Selftest status: {status}".format(status=state))
+                self.__logger.info("Analog selftest passed.")
+                return 0    # Return 0 on success
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def selftest_hv(self):
         async with self.__lock:
-            await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
-            await self.get_error()          # Clear the error flag if set
-            self.__logger.info("Running high voltage selftest. This takes about 1 minute")
-            await self.write("TSTH")
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE | SrqMask.MSG_RDY)   # Enable SRQs to wait for each test step
+            try:
+                await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
+                await self.get_error()          # Clear the error flag if set
+                self.__logger.info("Running high voltage selftest. This takes about 1 minute")
+                await self.write("TSTH")
 
-            # Wait until we are done
-            while "testing":
-                spoll = await self.serial_poll()
-                if spoll & SerialPollFlags.MSG_RDY:
-                    msg = await self.read()
-                    self.__logger.warning("High voltage selftest failed with message: {msg}.".format(msg=msg))
-                    return msg
+                # Wait until we are done
+                while "testing":
+                    await self.__conn.wait(1 << 11)    # Wait for RQS
+                    spoll = await self.serial_poll()
+                    if spoll & SerialPollFlags.MSG_RDY:
+                        msg = await self.read()
+                        self.__logger.warning("High voltage selftest failed with message: {msg}.".format(msg=msg))
+                        return msg
 
-                if spoll & SerialPollFlags.DOING_STATE_CHANGE:
-                    state = await self.get_state()
-                    if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE):
-                        self.__logger.warning("High voltage selftest failed. Invalid state: {state}.".format(state=state))
-                        return state
+                    if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                        state = await self.get_state()
+                        if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE):
+                            self.__logger.warning("High voltage selftest failed. Invalid state: {state}.".format(state=state))
+                            return state
 
-                    if state == State.IDLE:
-                        break
-                    self.__logger.info("Selftest status: {status}".format(status=state))
-                await asyncio.sleep(2.0)
-            self.__logger.info("High voltage selftest passed.")
-            return 0    # Return 0 on success
+                        if state == State.IDLE:
+                            break
+                        self.__logger.info("Selftest status: {status}".format(status=state))
+                self.__logger.info("High voltage selftest passed.")
+                return 0    # Return 0 on success
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def selftest_all(self):
         result = await self.selftest_digital()
@@ -393,44 +422,48 @@ class Fluke_5440B:
 
     async def acal(self):
         async with self.__lock:
-            await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
-            await self.get_error()          # Clear the error flag if set
-            self.__logger.info("Running internal calibration. This will take about 6.5 minutes.")
-            await self.write("CALI")
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for each calibration step
+            try:
+                await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
+                await self.get_error()          # Clear the error flag if set
+                self.__logger.info("Running internal calibration. This will take about 6.5 minutes.")
+                await self.write("CALI")
 
-            # Wait until we are done
-            while "calibrating":
-                spoll = await self.serial_poll()
-                if spoll & SerialPollFlags.DOING_STATE_CHANGE:
-                    state = await self.get_state()
-                    if state not in (
-                        State.IDLE,
-                        State.CALIBRATING_ADC,
-                        State.ZEROING_10V_pos,
-                        State.CAL_N1_N2_RATIO,
-                        State.ZEROING_10V_neg,
-                        State.ZEROING_20V_pos,
-                        State.ZEROING_20V_neg,
-                        State.ZEROING_250V_pos,
-                        State.ZEROING_250V_neg,
-                        State.ZEROING_1000V_pos,
-                        State.ZEROING_1000V_neg,
-                        State.CALIBRATING_GAIN_10V_pos,
-                        State.CALIBRATING_GAIN_20V_pos,
-                        State.CALIBRATING_GAIN_HV_pos,
-                        State.CALIBRATING_GAIN_HV_neg,
-                        State.CALIBRATING_GAIN_20V_neg,
-                        State.CALIBRATING_GAIN_10V_neg,
-                        State.WRITING_TO_NVRAM,
-                    ):
-                        self.__logger.warning("Internal calibration failed. Invalid state: {state}.".format(state=state))
+                # Wait until we are done
+                while "calibrating":
+                    await self.__conn.wait(1 << 11)    # Wait for RQS
+                    spoll = await self.serial_poll()
+                    if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                        state = await self.get_state()
+                        if state not in (
+                            State.IDLE,
+                            State.CALIBRATING_ADC,
+                            State.ZEROING_10V_pos,
+                            State.CAL_N1_N2_RATIO,
+                            State.ZEROING_10V_neg,
+                            State.ZEROING_20V_pos,
+                            State.ZEROING_20V_neg,
+                            State.ZEROING_250V_pos,
+                            State.ZEROING_250V_neg,
+                            State.ZEROING_1000V_pos,
+                            State.ZEROING_1000V_neg,
+                            State.CALIBRATING_GAIN_10V_pos,
+                            State.CALIBRATING_GAIN_20V_pos,
+                            State.CALIBRATING_GAIN_HV_pos,
+                            State.CALIBRATING_GAIN_HV_neg,
+                            State.CALIBRATING_GAIN_20V_neg,
+                            State.CALIBRATING_GAIN_10V_neg,
+                            State.WRITING_TO_NVRAM,
+                        ):
+                            self.__logger.warning("Internal calibration failed. Invalid state: {state}.".format(state=state))
 
-                    if state == State.IDLE:
-                        break
-                    self.__logger.info("Calibration status: {status}".format(status=state))
-                await asyncio.sleep(1.0)
-            self.__logger.info("Internal calibration done.")
-            return 0    # Return 0 on success
+                        if state == State.IDLE:
+                            break
+                        self.__logger.info("Calibration status: {status}".format(status=state))
+                self.__logger.info("Internal calibration done.")
+                return 0    # Return 0 on success
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def get_baud_rate(self):
         return BAUD_RATES_AVAILABLE[int(await self.query("GBDR"))]
