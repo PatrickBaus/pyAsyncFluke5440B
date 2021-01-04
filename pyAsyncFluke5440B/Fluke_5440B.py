@@ -158,11 +158,7 @@ class Fluke_5440B:
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
-        async with self.__lock:
-            await self.__conn.clear()
-            await self.__wait_for_state_change()
-            await self.__wait_for_idle()
-
+        await self.reset()
         await asyncio.gather(
             self.__set_terminator(TerminatorType.LF_EOI),   # terminate lines with \n
             self.__set_separator(SeparatorType.COMMA),      # use a comma as the separator
@@ -193,7 +189,8 @@ class Fluke_5440B:
 
     async def reset(self):
         async with self.__lock:
-            await self.write("RESET")
+            # We do not call "RESET", because a DCL will do the same and additionall circumvents the input buffer
+            await self.__conn.clear()
             await self.__wait_for_state_change()
             await self.__wait_for_idle()
 
@@ -427,7 +424,6 @@ class Fluke_5440B:
                     State.WRITING_TO_NVRAM,
                 ):
                     self.__logger.warning("Invalid code: {code}.".format(code=new_state.value))
-#                    return new_state.value
 
                 if new_state != state:
                     state = new_state
