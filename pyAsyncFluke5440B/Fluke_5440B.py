@@ -111,28 +111,28 @@ class State(Enum):
 
 class SrqMask(Flag):
     NONE                = 0b0
-    DOING_STATE_CHANGE  = 0b100
-    MSG_RDY             = 0b1000
-    OUTPUT_SETTLED      = 0b10000
-    ERROR_CONDITION     = 0b100000
+    DOING_STATE_CHANGE  = 1 << 2
+    MSG_RDY             = 1 << 3
+    OUTPUT_SETTLED      = 1 << 4
+    ERROR_CONDITION     = 1 << 5
 
 class SerialPollFlags(Flag):
-    NONE                  = 0b0
-    SRQ_ON_STATE_CHANGE   = 0b100
-    SRQ_ON_MSG_RDY        = 0b1000
-    SRQ_ON_OUTPUT_SETTLED = 0b10000
-    SRQ_ON_ERROR          = 0b100000
-    SRQ                   = 0b1000000
+    NONE               = 0b0
+    DOING_STATE_CHANGE = 1 << 2
+    MSG_RDY            = 1 << 3
+    OUTPUT_SETTLED     = 1 << 4
+    ERROR_CONDITION    = 1 << 5
+    SRQ                = 1 << 6
 
 class StatusFlags(Flag):
-    VOLTAGE_MODE           = 0b1
-    CURRENT_BOOST_MODE     = 0b10
-    VOLTAGE_BOOST_MODE     = 0b100
-    DIVIDER_ENABLED        = 0b1000
-    INTERNAL_SENSE_ENABLED = 0b10000
-    OUTPUT_ENABLED         = 0b100000
-    INTERNAL_GUARD_ENABLED = 0b1000000
-    REAR_OUTPUT_ENABLED    = 0b10000000
+    VOLTAGE_MODE           = 1 << 0
+    CURRENT_BOOST_MODE     = 1 << 1
+    VOLTAGE_BOOST_MODE     = 1 << 2
+    DIVIDER_ENABLED        = 1 << 3
+    INTERNAL_SENSE_ENABLED = 1 << 4
+    OUTPUT_ENABLED         = 1 << 5
+    INTERNAL_GUARD_ENABLED = 1 << 6
+    REAR_OUTPUT_ENABLED    = 1 << 7
 
 BAUD_RATES_AVAILABLE = (50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600)
 
@@ -378,3 +378,6 @@ class Fluke_5440B:
 
     async def get_calibration_constants(self):
         pass
+
+    async def serial_poll(self):
+        return SerialPollFlags(int(await self.__conn.serial_poll()))
