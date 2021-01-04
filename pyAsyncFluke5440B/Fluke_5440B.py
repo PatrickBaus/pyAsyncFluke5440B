@@ -352,8 +352,8 @@ class Fluke_5440B:
                         self.__logger.warning("Analog selftest failed. Invalid state: {state}.".format(state=state))
                         return state
 
-                if state == State.IDLE:
-                    break
+                    if state == State.IDLE:
+                        break
                 self.__logger.info("Selftest status: {status}".format(status=state))
                 await asyncio.sleep(5.0)
             self.__logger.info("Analog selftest passed.")
