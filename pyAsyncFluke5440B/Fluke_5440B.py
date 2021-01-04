@@ -185,6 +185,11 @@ class Fluke_5440B:
 
     async def reset(self):
         await self.write("RESET")
+        await self.__wait_for_state_change()
+
+    async def __wait_for_state_change(self):
+        while (await self.serial_poll() & SerialPollFlags.DOING_STATE_CHANGE):
+            await asyncio.sleep(0.1)
 
     async def get_terminator(self):
         return TerminatorType(int(await self.query("GTRM")))
