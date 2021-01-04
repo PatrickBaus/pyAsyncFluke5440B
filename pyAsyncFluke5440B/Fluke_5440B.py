@@ -311,10 +311,6 @@ class Fluke_5440B:
                     msg = await self.read()
                     self.__logger.warning("Digital selftest failed with message: {msg}.".format(msg=msg))
                     return msg
-                if spoll & SerialPollFlags.ERROR_CONDITION:
-                    err = await self.get_error()
-                    self.__logger.warning("Digital selftest failed with error. Error code: {code}.".format(code=err))
-                    return err
                 if spoll & SerialPollFlags.DOING_STATE_CHANGE:
                     state = await self.get_state()
                     if state not in (State.IDLE, State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU):
@@ -342,10 +338,6 @@ class Fluke_5440B:
                     msg = await self.read()
                     self.__logger.warning("Analog selftest failed with message: {msg}.".format(msg=msg))
                     return msg
-                if spoll & SerialPollFlags.ERROR_CONDITION:
-                    err = await self.get_error()
-                    self.__logger.warning("Analog selftest failed with error. Error code: {code}.".format(code=err))
-                    return err
                 if spoll & SerialPollFlags.DOING_STATE_CHANGE:
                     state = await self.get_state()
                     if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_LOW_VOLTAGE, State.SELF_TEST_OVEN):
@@ -354,37 +346,32 @@ class Fluke_5440B:
 
                     if state == State.IDLE:
                         break
-                self.__logger.info("Selftest status: {status}".format(status=state))
+                    self.__logger.info("Selftest status: {status}".format(status=state))
                 await asyncio.sleep(5.0)
             self.__logger.info("Analog selftest passed.")
             return 0    # Return 0 on success
 
     async def selftest_hv(self):
         async with self.__lock:
-            await self.__wait_for_idle()
+            await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
+            await self.get_error()          # Clear the error flag if set
             self.__logger.info("Running high voltage selftest. This takes about 1 minute")
             await self.write("TSTH")
 
-            state = State.IDLE
             # Wait until we are done
             while "testing":
-                new_state = await self.__get_state()
-                try:
-                    # test if it is an error code or state
-                    # TODO: this needs to be verified with a broken unit, I can only guess, that the selftest will
-                    # return a non zero result during test, which will be in the buffer, so the final result might be
-                    # either the $errorcode, $errorcode\n$state or something else.
-                    new_state = State(int(new_state))
-                except ValueError:
-                    self.__logger.warning("High voltage selftest failed. Code: {code}.".format(code=new_state))
-                    return new_state
+                spoll = await self.serial_poll()
+                if spoll & SerialPollFlags.MSG_RDY:
+                    msg = await self.read()
+                    self.__logger.warning("High voltage selftest failed with message: {msg}.".format(msg=msg))
+                    return msg
 
-                if new_state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE):
-                    self.__logger.warning("High voltage selftest failed. Code: {code}.".format(code=new_state.value))
-                    return new_state.value
+                if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                    state = await self.get_state()
+                    if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE):
+                        self.__logger.warning("High voltage selftest failed. Invalid state: {state}.".format(state=state))
+                        return state
 
-                if new_state != state:
-                    state = new_state
                     if state == State.IDLE:
                         break
                     self.__logger.info("Selftest status: {status}".format(status=state))
