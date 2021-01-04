@@ -377,7 +377,7 @@ class Fluke_5440B:
                     self.__logger.info("Selftest status: {status}".format(status=state))
                 await asyncio.sleep(2.0)
             self.__logger.info("High voltage selftest passed.")
-            return state.value
+            return 0    # Return 0 on success
 
     async def selftest_all(self):
         result = await self.selftest_digital()
@@ -393,45 +393,44 @@ class Fluke_5440B:
 
     async def acal(self):
         async with self.__lock:
-            await self.__wait_for_idle()
+            await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
+            await self.get_error()          # Clear the error flag if set
             self.__logger.info("Running internal calibration. This will take about 6.5 minutes.")
             await self.write("CALI")
 
-            state = State.IDLE
             # Wait until we are done
             while "calibrating":
-                new_state = await self.get_state()
+                spoll = await self.serial_poll()
+                if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                    state = await self.get_state()
+                    if state not in (
+                        State.IDLE,
+                        State.CALIBRATING_ADC,
+                        State.ZEROING_10V_pos,
+                        State.CAL_N1_N2_RATIO,
+                        State.ZEROING_10V_neg,
+                        State.ZEROING_20V_pos,
+                        State.ZEROING_20V_neg,
+                        State.ZEROING_250V_pos,
+                        State.ZEROING_250V_neg,
+                        State.ZEROING_1000V_pos,
+                        State.ZEROING_1000V_neg,
+                        State.CALIBRATING_GAIN_10V_pos,
+                        State.CALIBRATING_GAIN_20V_pos,
+                        State.CALIBRATING_GAIN_HV_pos,
+                        State.CALIBRATING_GAIN_HV_neg,
+                        State.CALIBRATING_GAIN_20V_neg,
+                        State.CALIBRATING_GAIN_10V_neg,
+                        State.WRITING_TO_NVRAM,
+                    ):
+                        self.__logger.warning("Internal calibration failed. Invalid state: {state}.".format(state=state))
 
-                if new_state not in (
-                    State.IDLE,
-                    State.CALIBRATING_ADC,
-                    State.ZEROING_10V_pos,
-                    State.CAL_N1_N2_RATIO,
-                    State.ZEROING_10V_neg,
-                    State.ZEROING_20V_pos,
-                    State.ZEROING_20V_neg,
-                    State.ZEROING_250V_pos,
-                    State.ZEROING_250V_neg,
-                    State.ZEROING_1000V_pos,
-                    State.ZEROING_1000V_neg,
-                    State.CALIBRATING_GAIN_10V_pos,
-                    State.CALIBRATING_GAIN_20V_pos,
-                    State.CALIBRATING_GAIN_HV_pos,
-                    State.CALIBRATING_GAIN_HV_neg,
-                    State.CALIBRATING_GAIN_20V_neg,
-                    State.CALIBRATING_GAIN_10V_neg,
-                    State.WRITING_TO_NVRAM,
-                ):
-                    self.__logger.warning("Invalid code: {code}.".format(code=new_state.value))
-
-                if new_state != state:
-                    state = new_state
                     if state == State.IDLE:
                         break
                     self.__logger.info("Calibration status: {status}".format(status=state))
                 await asyncio.sleep(1.0)
             self.__logger.info("Internal calibration done.")
-            return state.value
+            return 0    # Return 0 on success
 
     async def get_baud_rate(self):
         return BAUD_RATES_AVAILABLE[int(await self.query("GBDR"))]
