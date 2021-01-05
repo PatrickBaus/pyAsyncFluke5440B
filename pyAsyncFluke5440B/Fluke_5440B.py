@@ -23,14 +23,6 @@ from decimal import Decimal
 from enum import Enum, Flag
 import logging
 
-class InvalidStateError(ValueError):
-    @property
-    def value(self):
-        return self.args[1]
-
-    def __init__(self, message, value):
-        self.args = [message, value]
-
 class SeparatorType(Enum):
     COMMA = 0
     COLON = 1
@@ -316,10 +308,7 @@ class Fluke_5440B:
         return ErrorCode(int(await self.query("GERR")))
 
     async def get_state(self):
-        try:
-            return State(int(await self.__get_state()))
-        except ValueError as e:
-            raise InvalidStateError(e.args[0], result) from None
+        return State(int(await self.__get_state()))
 
     async def __get_state(self):
         return await self.query("GDNG")
