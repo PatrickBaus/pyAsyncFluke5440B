@@ -261,7 +261,7 @@ class Fluke_5440B:
     async def set_output(self, value):
         await self.write("SOUT {value:f}".format(value=value))
         err = self.get_error()
-        if err != ErrorCode.None:
+        if err != ErrorCode.NONE:
             raise ValueError("Invalid output voltage ({code}).".format(code=err))
 
     async def set_internal_sense(self, enabled):
@@ -273,7 +273,7 @@ class Fluke_5440B:
     async def get_voltage_limit(self):
         result = await self.query("GVLM")
         err = self.get_error()
-        if err == ErrorCode.None:
+        if err == ErrorCode.NONE:
             return Decimal(result)
         else:
             raise TypeError("Voltage limit not supported in current boost mode ({code}).".format(code=err))
@@ -281,13 +281,13 @@ class Fluke_5440B:
     async def set_voltage_limit(self, value):
         await self.write("SVLM {value:f}".format(value=value))
         err = self.get_error()
-        if err != ErrorCode.None:
+        if err != ErrorCode.NONE:
             raise ValueError("Invalid voltage limit ({code}).".format(code=err))
 
     async def get_current_limit(self):
         result = await self.query("GCLM")
         err = self.get_error()
-        if err == ErrorCode.None:
+        if err == ErrorCode.NONE:
             return Decimal(result)
         else:
             raise TypeError("Voltage limit not supported in voltage boost mode ({code}).".format(code=err))
@@ -295,7 +295,7 @@ class Fluke_5440B:
     async def set_current_limit(self, value):
         await self.write("SCLM {value:f}".format(value=value))
         err = self.get_error()
-        if err != ErrorCode.None:
+        if err != ErrorCode.NONE:
             raise ValueError("Invalid current limit ({code}).".format(code=err))
 
     async def _get_software_version(self):
@@ -319,10 +319,9 @@ class Fluke_5440B:
             try:
                 await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
                 await self.get_error()          # Clear the error flag if set
+
                 self.__logger.info("Running digital selftest. This takes about 5 seconds.")
                 await self.write("TSTD")
-
-                # Wait until we are done
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
                     spoll = await self.serial_poll()
@@ -350,10 +349,9 @@ class Fluke_5440B:
             try:
                 await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
                 await self.get_error()          # Clear the error flag if set
+
                 self.__logger.info("Running analog selftest. This takes about 4 minutes.")
                 await self.write("TSTA")
-
-                # Wait until we are done
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
                     spoll = await self.serial_poll()
@@ -381,10 +379,9 @@ class Fluke_5440B:
             try:
                 await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
                 await self.get_error()          # Clear the error flag if set
+
                 self.__logger.info("Running high voltage selftest. This takes about 1 minute")
                 await self.write("TSTH")
-
-                # Wait until we are done
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
                     spoll = await self.serial_poll()
@@ -425,10 +422,9 @@ class Fluke_5440B:
             try:
                 await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
                 await self.get_error()          # Clear the error flag if set
+
                 self.__logger.info("Running internal calibration. This will take about 6.5 minutes.")
                 await self.write("CALI")
-
-                # Wait until we are done
                 while "calibrating":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
                     spoll = await self.serial_poll()
