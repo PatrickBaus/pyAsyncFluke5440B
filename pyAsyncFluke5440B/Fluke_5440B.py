@@ -158,12 +158,15 @@ class Fluke_5440B:
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
+        elif hasattr(self.__conn, "set_auto_polling"):
+            # Used by linux-gpib
+            await self.__conn.set_auto_polling(True)             # Enable RQS by auto polling ibsta on SRQ
+
         async with self.__lock:
             await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
             await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
             await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
 
-        await self.__conn.set_auto_polling(True)             # Enable RQS by auto polling ibsta on SRQ
         await self.serial_poll()                             # clear the SRQ bit
         await self.get_state()                               # clear the DOING_STATE_CHANGE bit
 
@@ -264,11 +267,10 @@ class Fluke_5440B:
         return Decimal(await self.query("GOUT"))
 
     async def set_output(self, value):
-        # Note: should be +-20 if in current boost mode
-        # Note: should be +-1500 in voltage boost mode
-        # Note: should be +-2.2 in divider mode
-        #assert (-1100. <= value <= 1100.)
         await self.write("SOUT {value:f}".format(value=value))
+        err = self.get_error()
+        if err != ErrorCode.None:
+            raise ValueError("Invalid output voltage ({code}).".format(code=err))
 
     async def set_internal_sense(self, enabled):
         await self.write("ISNS" if enabled else "ESNS")
@@ -277,23 +279,32 @@ class Fluke_5440B:
         await self.write("IGRD" if enabled else "EGRD")
 
     async def get_voltage_limit(self):
-        # TODO catch error when in current boost mode
-        return Decimal(await self.query("GVLM"))
+        result = await self.query("GVLM")
+        err = self.get_error()
+        if err == ErrorCode.None:
+            return Decimal(result)
+        else:
+            raise TypeError("Voltage limit not supported in current boost mode ({code}).".format(code=err))
 
     async def set_voltage_limit(self, value):
-        # Note should be +-1500 in voltage boost mode
-        #assert (-1100. <= value <= 1100.)
-        pass
+        await self.write("SVLM {value:f}".format(value=value))
+        err = self.get_error()
+        if err != ErrorCode.None:
+            raise ValueError("Invalid voltage limit ({code}).".format(code=err))
 
     async def get_current_limit(self):
-        # TODO catch error when in voltage boost mode
-        return Decimal(await self.query("GCLM"))
+        result = await self.query("GCLM")
+        err = self.get_error()
+        if err == ErrorCode.None:
+            return Decimal(result)
+        else:
+            raise TypeError("Voltage limit not supported in voltage boost mode ({code}).".format(code=err))
 
     async def set_current_limit(self, value):
-        # Note: should be +-0.065 in voltage mode
-        # Note: should be +-0.10 in voltage boost mode
-        #assert (-20. <= value <= 20.)
-        pass
+        await self.write("SCLM {value:f}".format(value=value))
+        err = self.get_error()
+        if err != ErrorCode.None:
+            raise ValueError("Invalid current limit ({code}).".format(code=err))
 
     async def _get_software_version(self):
         return await self.query("GVRS")
