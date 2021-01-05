@@ -380,7 +380,7 @@ class Fluke_5440B:
                 await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
                 await self.get_error()          # Clear the error flag if set
 
-                self.__logger.info("Running high voltage selftest. This takes about 1 minute")
+                self.__logger.info("Running high voltage selftest. This takes about 1 minute.")
                 await self.write("TSTH")
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
