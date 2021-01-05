@@ -158,12 +158,14 @@ class Fluke_5440B:
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
+        async with self.__lock:
+            await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
+            await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
+            await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
+
         await self.__conn.set_auto_polling(True)             # Enable RQS by auto polling ibsta on SRQ
         await self.serial_poll()                             # clear the SRQ bit
         await self.get_state()                               # clear the DOING_STATE_CHANGE bit
-        await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
-        await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
-        await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
 
     async def disconnect(self):
         try:
@@ -194,17 +196,25 @@ class Fluke_5440B:
         await self.write(cmd)
         return await self.read()
 
+    async def __wait_for_state_change(self):
+        while (await self.serial_poll()) & SerialPollFlags.DOING_STATE_CHANGE:
+            await asyncio.sleep(0.5)
+
     async def reset(self):
         async with self.__lock:
             # We do not send "RESET", because a DCL will do the same and additionally circumvents the input buffer
             await self.__conn.clear()
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for state changes
-            try:
-                await self.__wait_for_idle()
-            finally:
-                await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
-                await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
-                await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
+            # We cannot use interrupts, because the device is resetting all settings and will not accept commands
+            # until it has reset. So we will poll the status register first, and when this is done, we will poll
+            # the device itself until it is ready
+            await self.__wait_for_state_change()
+            while (await self.get_state()) != State.IDLE:
+                await asyncio.sleep(0.5)
+
+            await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
+            await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
+            await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
+
 
     async def remote(self):
         await self.__conn.remote_enable(True)
@@ -225,17 +235,23 @@ class Fluke_5440B:
             return TerminatorType(int(await self.query("GTRM")))
 
     async def __set_terminator(self, value):
+        """
+        Engage lock, before calling
+        """
         assert isinstance(value, TerminatorType)
-        async with self.__lock:
-            await self.write("STRM {value:d}".format(value=value.value))
+        await self.write("STRM {value:d}".format(value=value.value))
+        await self.__wait_for_state_change()
 
     async def get_separator(self):
         return SeparatorType(int(await self.query("GSEP")))
 
     async def __set_separator(self, value):
+        """
+        Engage lock, before calling
+        """
         assert isinstance(value, SeparatorType)
-        async with self.__lock:
-            await self.write("SSEP {value:d}".format(value=value.value))
+        await self.write("SSEP {value:d}".format(value=value.value))
+        await self.__wait_for_state_change()
 
     async def set_mode(self, value):
         assert isinstance(value, ModeType)
@@ -299,7 +315,7 @@ class Fluke_5440B:
 
     async def selftest_digital(self):
         async with self.__lock:
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE | SrqMask.MSG_RDY)   # Enable SRQs to wait for each test step
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for each test step
             try:
                 await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
                 await self.get_error()          # Clear the error flag if set
@@ -330,7 +346,7 @@ class Fluke_5440B:
 
     async def selftest_analog(self):
         async with self.__lock:
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE | SrqMask.MSG_RDY)   # Enable SRQs to wait for each test step
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for each test step
             try:
                 await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
                 await self.get_error()          # Clear the error flag if set
@@ -361,7 +377,7 @@ class Fluke_5440B:
 
     async def selftest_hv(self):
         async with self.__lock:
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE | SrqMask.MSG_RDY)   # Enable SRQs to wait for each test step
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait for each test step
             try:
                 await self.__wait_for_idle()    # This will also clear the DOING_STATE_CHANGE bit of the serial poll status byte
                 await self.get_error()          # Clear the error flag if set
