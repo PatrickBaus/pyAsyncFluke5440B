@@ -168,8 +168,12 @@ class Fluke_5440B:
 
             if status & SerialPollFlags.ERROR_CONDITION:
                 await self.get_error()
-            if status & SerialPollFlags.DOING_STATE_CHANGE:
-                await self.get_state()
+            state = await self.get_state()
+            if state != State.idle:
+                await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)
+                self.__logger.info("Waiting for the calibrator to be ready. This may take a while.")
+                await self.__conn.wait(1 << 11)    # Wait for RQS
+                await self.serial_poll()           # Clear SRQ
 
             await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
             await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
