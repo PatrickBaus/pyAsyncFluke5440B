@@ -161,15 +161,16 @@ class Fluke_5440B:
             await self.__conn.set_auto_polling(True)             # Enable RQS by auto polling ibsta on SRQ
 
         async with self.__lock:
-            await self.__set_terminator(TerminatorType.LF_EOI, test_error=False)   # terminate lines with \n
-            await self.__set_separator(SeparatorType.COMMA, test_error=False)      # use a comma as the separator
-            await self.set_srq_mask(SrqMask.NONE, test_error=False)                # Disable interrupts
+            try:
+                await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
+            except DeviceError:
+                # Try again, in case the error was from some other command and left by the someone else
+                await self.__set_terminator(TerminatorType.LF_EOI)
 
-        status = await self.serial_poll()              # clears the SRQ bit
-        if status & SerialPollFlags.ERROR_CONDITION:
-            await self.get_error()                     # clear the error condition flag
-        if status & SerialPollFlags.DOING_STATE_CHANGE:
-            await self.get_state()                     # clear the DOING_STATE_CHANGE bit, unless we are changing state
+            status = await self.serial_poll()              # clears the SRQ bit
+
+            await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
+            await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
 
     async def disconnect(self):
         try:
