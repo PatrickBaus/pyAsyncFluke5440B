@@ -168,6 +168,10 @@ class Fluke_5440B:
                 await self.__set_terminator(TerminatorType.LF_EOI)
 
             status = await self.serial_poll()              # clears the SRQ bit
+            while status & SerialPollFlags.MSG_RDY:        # clear message buffer
+                await self.read()
+                status = await self.serial_poll()
+
 
             await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
             await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
@@ -181,7 +185,7 @@ class Fluke_5440B:
         finally:
             await self.__conn.disconnect()
 
-    async def write(self, cmd, test_error=True):
+    async def write(self, cmd, test_error=False):
         assert isinstance(cmd, str) or isinstance(cmd, bytes)
         try:
             cmd = cmd.encode("ascii")
@@ -193,15 +197,16 @@ class Fluke_5440B:
 
         await self.__conn.write(cmd)
         if test_error:
-            err = await self.get_error()
-            if err != ErrorCode.NONE:
+            await asyncio.sleep(0.2)
+            if (await self.serial_poll()) & SerialPollFlags.ERROR_CONDITION:
+                err = await self.get_error()
                 raise DeviceError("Device error on command: {cmd}, code: {code}".format(cmd=cmd, code=err), err)
 
     async def read(self):
         result = (await self.__conn.read()).rstrip().decode("utf-8").split(",")  # strip \n and split at the seprator
         return result[0] if len(result) == 1 else result
 
-    async def query(self, cmd, test_error=True):
+    async def query(self, cmd, test_error=False):
         await self.write(cmd, test_error)
         return await self.read()
 
@@ -265,7 +270,7 @@ class Fluke_5440B:
 
     async def set_mode(self, value):
         assert isinstance(value, ModeType)
-        await self.write("{value}".format(value=value.value))
+        await self.write("{value}".format(value=value.value), test_error=True)
 
     async def set_output_enabled(self, enabled):
         await self.write("OPER" if enabled else "STBY")
@@ -275,13 +280,13 @@ class Fluke_5440B:
 
     async def set_output(self, value):
         try:
-            await self.write("SOUT {value:f}".format(value=value))
+            await self.write("SOUT {value:f}".format(value=value), test_error=True)
         except DeviceError as e:
             raise ValueError("Invalid output voltage ({code}).".format(code=e.code)) from None
 
     async def set_internal_sense(self, enabled):
         try:
-            await self.write("ISNS" if enabled else "ESNS")
+            await self.write("ISNS" if enabled else "ESNS", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.INVALID_SENSE_MODE:
                 raise TypeError("Sense mode not allowed.") from None
@@ -290,7 +295,7 @@ class Fluke_5440B:
 
     async def set_internal_guard(self, enabled):
         try:
-            await self.write("IGRD" if enabled else "EGRD")
+            await self.write("IGRD" if enabled else "EGRD", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.INVALID_GUARD_MODE:
                 raise TypeError("Guard mode not allowed.") from None
@@ -298,14 +303,14 @@ class Fluke_5440B:
                 raise
 
     async def set_divider(self, enabled):
-        await self.write("DIVY" if enabled else "DIVN")
+        await self.write("DIVY" if enabled else "DIVN", test_error=True)
 
     async def get_voltage_limit(self):
         return await self.query("GVLM")
 
     async def set_voltage_limit(self, value):
         try:
-            await self.write("SVLM {value:f}".format(value=value))
+            await self.write("SVLM {value:f}".format(value=value), test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.LIMIT_OUT_OF_RANGE:
                 raise ValueError("Invalid voltage limit.") from None
@@ -317,7 +322,7 @@ class Fluke_5440B:
 
     async def set_current_limit(self, value):
         try:
-            await self.write("SCLM {value:f}".format(value=value))
+            await self.write("SCLM {value:f}".format(value=value), test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.LIMIT_OUT_OF_RANGE:
                 raise ValueError("Invalid current limit.")
@@ -331,7 +336,7 @@ class Fluke_5440B:
         return StatusFlags(int(await self.query("GSTS")))
 
     async def get_error(self):
-        return ErrorCode(int(await self.query("GERR", test_error=False)))
+        return ErrorCode(int(await self.query("GERR")))
 
     async def get_state(self):
         return State(int(await self.query("GDNG")))
@@ -347,12 +352,12 @@ class Fluke_5440B:
                 await self.write("TSTD")
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
-                    spoll = await self.serial_poll()
-                    if spoll & SerialPollFlags.MSG_RDY:
+                    status = await self.serial_poll()
+                    if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning("Digital selftest failed with message: {msg}.".format(msg=msg))
                         return msg
-                    if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                    if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (State.IDLE, State.SELF_TEST_MAIN_CPU, State.SELF_TEST_FRONTPANEL_CPU, State.SELF_TEST_GUARD_CPU):
                             self.__logger.warning("Digital selftest failed. Invalid state: {state}.".format(state=state))
@@ -377,12 +382,12 @@ class Fluke_5440B:
                 await self.write("TSTA")
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
-                    spoll = await self.serial_poll()
-                    if spoll & SerialPollFlags.MSG_RDY:
+                    status = await self.serial_poll()
+                    if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning("Analog selftest failed with message: {msg}.".format(msg=msg))
                         return msg
-                    if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                    if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_LOW_VOLTAGE, State.SELF_TEST_OVEN):
                             self.__logger.warning("Analog selftest failed. Invalid state: {state}.".format(state=state))
@@ -407,13 +412,13 @@ class Fluke_5440B:
                 await self.write("TSTH")
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
-                    spoll = await self.serial_poll()
-                    if spoll & SerialPollFlags.MSG_RDY:
+                    status = await self.serial_poll()
+                    if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning("High voltage selftest failed with message: {msg}.".format(msg=msg))
                         return msg
 
-                    if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                    if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE):
                             self.__logger.warning("High voltage selftest failed. Invalid state: {state}.".format(state=state))
@@ -450,8 +455,8 @@ class Fluke_5440B:
                 await self.write("CALI")
                 while "calibrating":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
-                    spoll = await self.serial_poll()
-                    if spoll & SerialPollFlags.DOING_STATE_CHANGE:
+                    status = await self.serial_poll()
+                    if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (
                             State.IDLE,
@@ -491,7 +496,7 @@ class Fluke_5440B:
         await self.write("SBDR {value:d}".format(value=value))
 
     async def set_enable_rs232(self, enabled):
-        await self.write("MONY" if enabled else "MONN")
+        await self.write("MONY" if enabled else "MONN", test_error=True)
 
     async def get_calibration_constants(self):
         async with self.__lock:
