@@ -161,12 +161,15 @@ class Fluke_5440B:
             await self.__conn.set_auto_polling(True)             # Enable RQS by auto polling ibsta on SRQ
 
         async with self.__lock:
-            await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
-            await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
-            await self.set_srq_mask(SrqMask.NONE)                # Disable interrupts
+            await self.__set_terminator(TerminatorType.LF_EOI, test_error=False)   # terminate lines with \n
+            await self.__set_separator(SeparatorType.COMMA, test_error=False)      # use a comma as the separator
+            await self.set_srq_mask(SrqMask.NONE, test_error=False)                # Disable interrupts
 
-        await self.serial_poll()                             # clear the SRQ bit
-        await self.get_state()                               # clear the DOING_STATE_CHANGE bit
+        status = await self.serial_poll()              # clears the SRQ bit
+        if status & SerialPollFlags.ERROR_CONDITION:
+            await self.get_error()                     # clear the error condition flag
+        if status & SerialPollFlags.DOING_STATE_CHANGE:
+            await self.get_state()                     # clear the DOING_STATE_CHANGE bit, unless we are changing state
 
     async def disconnect(self):
         try:
@@ -194,7 +197,7 @@ class Fluke_5440B:
                 raise DeviceError("Device error on command: {cmd}, code: {code}".format(cmd=cmd, code=err), err)
 
     async def read(self):
-        result = (await self.__conn.read())[:-1].decode("utf-8").split(",")  # strip \n and split at the seprator
+        result = (await self.__conn.read()).rstrip().decode("utf-8").split(",")  # strip \n and split at the seprator
         return result[0] if len(result) == 1 else result
 
     async def query(self, cmd, test_error=True):
@@ -281,7 +284,7 @@ class Fluke_5440B:
         except DeviceError as e:
             if e.code == ErrorCode.INVALID_SENSE_MODE:
                 raise TypeError("Sense mode not allowed.") from None
-            else
+            else:
                 raise
 
     async def set_internal_guard(self, enabled):
@@ -297,7 +300,7 @@ class Fluke_5440B:
         await self.write("DIVY" if enabled else "DIVN")
 
     async def get_voltage_limit(self):
-        result = await self.query("GVLM")
+        return await self.query("GVLM")
 
     async def set_voltage_limit(self, value):
         try:
@@ -309,7 +312,7 @@ class Fluke_5440B:
                 raise
 
     async def get_current_limit(self):
-        result = await self.query("GCLM")
+        return await self.query("GCLM")
 
     async def set_current_limit(self, value):
         try:
