@@ -169,11 +169,9 @@ class Fluke_5440B:
             if status & SerialPollFlags.ERROR_CONDITION:
                 await self.get_error()
             state = await self.get_state()
-            if state != State.idle:
+            if state != State.IDLE:
                 await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)
-                self.__logger.info("Waiting for the calibrator to be ready. This may take a while.")
-                await self.__conn.wait(1 << 11)    # Wait for RQS
-                await self.serial_poll()           # Clear SRQ
+                await self.__wait_for_idle()
 
             await self.__set_terminator(TerminatorType.LF_EOI)   # terminate lines with \n
             await self.__set_separator(SeparatorType.COMMA)      # use a comma as the separator
@@ -340,9 +338,12 @@ class Fluke_5440B:
         """
         Make sure, that SrqMask.DOING_STATE_CHANGE is set.
         """
-        while (await self.get_state()) != State.IDLE:
+        state = await self.get_state())
+        while (state != State.IDLE:
+            self.__logger.info("Calibrator busy: {state}. This may take a while.".format(state=state))
             await self.__conn.wait(1 << 11)    # Wait for RQS
             await self.serial_poll()           # Clear the SRQ bit
+            state = await self.get_state())
 
     async def selftest_digital(self):
         async with self.__lock:
