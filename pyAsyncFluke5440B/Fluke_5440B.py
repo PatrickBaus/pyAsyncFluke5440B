@@ -23,6 +23,12 @@ from decimal import Decimal
 from enum import Enum, Flag
 import logging
 
+class DeviceError(Exception):
+    def __init__(self, message, errorCode):
+        super().__init__(message)
+
+        self.code = errorCode
+
 class SeparatorType(Enum):
     COMMA = 0
     COLON = 1
@@ -171,7 +177,7 @@ class Fluke_5440B:
         finally:
             await self.__conn.disconnect()
 
-    async def write(self, cmd):
+    async def write(self, cmd, test_error=True):
         assert isinstance(cmd, str) or isinstance(cmd, bytes)
         try:
             cmd = cmd.encode("ascii")
@@ -182,13 +188,17 @@ class Fluke_5440B:
             raise ValueError("Command size must be 127 byte or less.")
 
         await self.__conn.write(cmd)
+        if test_error:
+            err = await self.get_error()
+            if err != ErrorCode.NONE:
+                raise DeviceError("Device error on command: {cmd}, code: {code}".format(cmd=cmd, code=err), err)
 
     async def read(self):
         result = (await self.__conn.read())[:-1].decode("utf-8").split(",")  # strip \n and split at the seprator
         return result[0] if len(result) == 1 else result
 
-    async def query(self, cmd):
-        await self.write(cmd)
+    async def query(self, cmd, test_error=True):
+        await self.write(cmd, test_error)
         return await self.read()
 
     async def __wait_for_state_change(self):
@@ -212,6 +222,7 @@ class Fluke_5440B:
 
 
     async def remote(self):
+        # TODO: fail
         await self.__conn.remote_enable(True)
 
     async def local(self):
@@ -259,44 +270,55 @@ class Fluke_5440B:
         return Decimal(await self.query("GOUT"))
 
     async def set_output(self, value):
-        await self.write("SOUT {value:f}".format(value=value))
-        err = self.get_error()
-        if err != ErrorCode.NONE:
-            raise ValueError("Invalid output voltage ({code}).".format(code=err))
+        try:
+            await self.write("SOUT {value:f}".format(value=value))
+        except DeviceError as e:
+            raise ValueError("Invalid output voltage ({code}).".format(code=e.code)) from None
 
     async def set_internal_sense(self, enabled):
-        await self.write("ISNS" if enabled else "ESNS")
+        try:
+            await self.write("ISNS" if enabled else "ESNS")
+        except DeviceError as e:
+            if e.code == ErrorCode.INVALID_SENSE_MODE:
+                raise TypeError("Sense mode not allowed.") from None
+            else
+                raise
 
     async def set_internal_guard(self, enabled):
-        await self.write("IGRD" if enabled else "EGRD")
+        try:
+            await self.write("IGRD" if enabled else "EGRD")
+        except DeviceError as e:
+            if e.code == ErrorCode.INVALID_GUARD_MODE:
+                raise TypeError("Guard mode not allowed.") from None
+            else:
+                raise
+
+    async def set_divider(self, enabled):
+        await self.write("DIVY" if enabled else "DIVN")
 
     async def get_voltage_limit(self):
         result = await self.query("GVLM")
-        err = self.get_error()
-        if err == ErrorCode.NONE:
-            return Decimal(result)
-        else:
-            raise TypeError("Voltage limit not supported in current boost mode ({code}).".format(code=err))
 
     async def set_voltage_limit(self, value):
-        await self.write("SVLM {value:f}".format(value=value))
-        err = self.get_error()
-        if err != ErrorCode.NONE:
-            raise ValueError("Invalid voltage limit ({code}).".format(code=err))
+        try:
+            await self.write("SVLM {value:f}".format(value=value))
+        except DeviceError as e:
+            if e.code == ErrorCode.LIMIT_OUT_OF_RANGE:
+                raise ValueError("Invalid voltage limit.") from None
+            else:
+                raise
 
     async def get_current_limit(self):
         result = await self.query("GCLM")
-        err = self.get_error()
-        if err == ErrorCode.NONE:
-            return Decimal(result)
-        else:
-            raise TypeError("Voltage limit not supported in voltage boost mode ({code}).".format(code=err))
 
     async def set_current_limit(self, value):
-        await self.write("SCLM {value:f}".format(value=value))
-        err = self.get_error()
-        if err != ErrorCode.NONE:
-            raise ValueError("Invalid current limit ({code}).".format(code=err))
+        try:
+            await self.write("SCLM {value:f}".format(value=value))
+        except DeviceError as e:
+            if e.code == ErrorCode.LIMIT_OUT_OF_RANGE:
+                raise ValueError("Invalid current limit.")
+            else:
+                raise
 
     async def _get_software_version(self):
         return await self.query("GVRS")
@@ -305,13 +327,10 @@ class Fluke_5440B:
         return StatusFlags(int(await self.query("GSTS")))
 
     async def get_error(self):
-        return ErrorCode(int(await self.query("GERR")))
+        return ErrorCode(int(await self.query("GERR", test_error=False)))
 
     async def get_state(self):
-        return State(int(await self.__get_state()))
-
-    async def __get_state(self):
-        return await self.query("GDNG")
+        return State(int(await self.query("GDNG")))
 
     async def selftest_digital(self):
         async with self.__lock:
