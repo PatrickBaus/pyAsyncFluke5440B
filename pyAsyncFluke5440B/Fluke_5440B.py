@@ -489,11 +489,19 @@ class Fluke_5440B:
                 await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def get_baud_rate(self):
-        return BAUD_RATES_AVAILABLE[int(await self.query("GBDR"))]
+        return BAUD_RATES_AVAILABLE[int(await self.query("GBDR", test_error=True))]
 
     async def set_baud_rate(self, value):
         assert (value in BAUD_RATES_AVAILABLE)
-        await self.write("SBDR {value:d}".format(value=value))
+        async with self.__lock:
+            self.__logger.info("Setting baud rate and writing to NVRAM. This takes about 1.5 minutes.")
+            try:
+                await self.write(f"SBDR {BAUD_RATES_AVAILABLE.index(value):d}", test_error=True)
+                await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait until written to NVRAM
+                await asyncio.sleep(0.5)
+                await self.__wait_for_idle()
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def set_enable_rs232(self, enabled):
         await self.write("MONY" if enabled else "MONN", test_error=True)
