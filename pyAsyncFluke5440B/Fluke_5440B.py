@@ -291,7 +291,10 @@ class Fluke_5440B:
         try:
             await self.write(f"SOUT {value}", test_error)
         except DeviceError as e:
-            raise ValueError(f"Invalid output voltage ({e.code}).") from None
+            if e.code == ErrorCode.OUTPUT_OUTSIDE_LIMITS:
+                raise ValueError("Value out of range") from None
+            else:
+                raise
 
     async def set_internal_sense(self, enabled):
         try:
