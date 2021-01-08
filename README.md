@@ -4,8 +4,8 @@ Python3 AsyncIO Fluke 5440B driver. This library requires Python [asyncio](https
 ## Supported GPIB Hardware
 |Device|Supported|Tested|Comments|
 |--|--|--|--|
-|[AsyncIO Prologix GPIB library](hhttps://github.com/PatrickBaus/pyAsyncPrologixGpib)|:x:|:x:|  |
-|[AsyncIO linux-gpib wrapper](https://github.com/PatrickBaus/pyAsyncGpib)|:heavy_check_mark:|:x:|To be released
+|[AsyncIO Prologix GPIB library](hhttps://github.com/PatrickBaus/pyAsyncPrologixGpib)|:heavy_check_mark:|:x:|  |
+|[AsyncIO linux-gpib wrapper](https://github.com/PatrickBaus/pyAsyncGpib)|:heavy_check_mark:|:heavy_check_mark:|To be released
 
 Tested using Linux, should work for Mac OSX, Windows and any OS with Python support.
 
@@ -143,7 +143,7 @@ ___Returns___
 * [[SeparatorType](#separatortype)] : The type of terminator used.
 
 ```python
-   async def set_mode()
+   async def set_mode(value)
 ```
 Enabled either voltage or current boost mode using an external Fluke 5205A power amplifier or a Fluke 5220A transconductance amplifier.
 
@@ -183,6 +183,22 @@ ___Arguments___
 ___Raises___
 * Raises a `ValueError` if the value is out of range. If the value is above or below ±1500 V, an error will be raised regardless of the `test_error` flag.
 * Raises a `DeviceError` if an error is detected.
+
+```python
+   async def set_internal_sense(enabled)
+```
+If the load resistance is greater than 1 MΩ, 2-wire calibration can be unsed. Otherwise cable resistance can reduce accuracy. Use internal sense for 2-wire calibrations.
+
+___Arguments___
+* `enabled` [bool] : If set, the voltage sense input internally connected to the output binding posts.
+
+```python
+   async def set_internal_guard(enabled)
+```
+If set, the guard is internally connected to the output LO terminal. Use this if the device being calibrated has floating inputs. If calibrating devices with grounded inputs, connect the guard terminal to the input LO of the device and disable the internal guard.
+
+___Arguments___
+* `enabled` [bool] : Set to enable the internal guard or unset to float the internal guard.
 
 ### Enums
 
