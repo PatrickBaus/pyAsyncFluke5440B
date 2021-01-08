@@ -264,7 +264,7 @@ class Fluke_5440B:
         await self.write(f"{value.value}", test_error=True)
 
     async def set_output_enabled(self, enabled):
-        await self.write("OPER" if enabled else "STBY")
+        await self.write("OPER" if enabled else "STBY", test_error=True)
 
     async def get_output(self):
         return Decimal(await self.query("GOUT"))
@@ -351,6 +351,7 @@ class Fluke_5440B:
                 await self.__wait_for_idle()
                 await self.get_error()          # Clear the error flag if set
 
+                await self.write("TSTD", test_error=True)
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
                     status = await self.serial_poll()  # Clear SRQ
@@ -380,7 +381,7 @@ class Fluke_5440B:
                 await self.__wait_for_idle()
                 await self.get_error()          # Clear the error flag if set
 
-                await self.write("TSTA")
+                await self.write("TSTA", test_error=True)
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
                     status = await self.serial_poll()  # Clear SRQ
@@ -410,7 +411,7 @@ class Fluke_5440B:
                 await self.__wait_for_idle()
                 await self.get_error()          # Clear the error flag if set
 
-                await self.write("TSTH")
+                await self.write("TSTH", test_error=True)
                 while "testing":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
                     status = await self.serial_poll()  # Clear SRQ
@@ -453,7 +454,7 @@ class Fluke_5440B:
                 await self.__wait_for_idle()
                 await self.get_error()          # Clear the error flag if set
 
-                await self.write("CALI")
+                await self.write("CALI", test_error=True)
                 while "calibrating":
                     await self.__conn.wait(1 << 11)    # Wait for RQS
                     status = await self.serial_poll()  # Clear SRQ
@@ -509,8 +510,8 @@ class Fluke_5440B:
     async def get_calibration_constants(self):
         async with self.__lock:
             # We need to split the query in two parts, because the input buffer of the 5440B is only 127 byte
-            result = await self.query(",".join(["GCAL " + str(i) for i in range(10)]))
-            result += await self.query(",".join(["GCAL " + str(i) for i in range(10,20)]))
+            result = await self.query(",".join(["GCAL " + str(i) for i in range(10)]), test_error=True)
+            result += await self.query(",".join(["GCAL " + str(i) for i in range(10,20)]), test_error=True)
             return {
                 "gain_0.2V": Decimal(result[5]),
                 "gain_2V": Decimal(result[4]),
