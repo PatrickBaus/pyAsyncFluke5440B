@@ -186,7 +186,7 @@ ___Raises___
 
 ### Enums
 
-#### TriggerType
+#### ModeType
 ```python
 class ModeType(Enum):
     NORMAL = "BSTO"
@@ -194,6 +194,7 @@ class ModeType(Enum):
     CURRENT_BOOST = "BSTC"
 ```
 
+#### TerminatorType
 ```python
 class TerminatorType(Enum):
     EOI       = 0
