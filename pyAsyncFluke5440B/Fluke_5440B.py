@@ -297,9 +297,12 @@ class Fluke_5440B:
         await self.write("DIVY" if enabled else "DIVN", test_error=True)
 
     async def get_voltage_limit(self):
-        return await self.query("GVLM")
-
-    async def set_voltage_limit(self, value):
+        # TODO: Needs testing for error when in current boost mode
+        result = await self.query("GVLM", test_error=True)
+        if isinstance(result, list):
+            return Decimal(result[1]), Decimal(result[0])
+        else:
+            return Decimal(result)
         try:
             await self.write("SVLM {value:f}".format(value=value), test_error=True)
         except DeviceError as e:
@@ -309,7 +312,12 @@ class Fluke_5440B:
                 raise
 
     async def get_current_limit(self):
-        return await self.query("GCLM")
+        # TODO: Needs testing for error when in voltage boost mode
+        result = await self.query("GCLM", test_error=True)
+        if isinstance(result, list):
+            return Decimal(result[1]), Decimal(result[0])
+        else:
+            return Decimal(result)
 
     async def set_current_limit(self, value):
         try:
