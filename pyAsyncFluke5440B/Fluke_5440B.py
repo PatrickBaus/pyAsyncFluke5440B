@@ -29,22 +29,6 @@ class DeviceError(Exception):
 
         self.code = errorCode
 
-class SeparatorType(Enum):
-    COMMA = 0
-    COLON = 1
-
-class TerminatorType(Enum):
-    EOI       = 0
-    CR_LF_EOI = 1
-    LF_EOI    = 2
-    CR_LF     = 3
-    LF        = 4
-
-class ModeType(Enum):
-    NORMAL = "BSTO"
-    VOLTAGE_BOOST = "BSTV"
-    CURRENT_BOOST = "BSTC"
-
 class ErrorCode(Enum):
     NONE                              = 0
     BOOST_INTERFACE_CONNECTION_ERROR  = 144
@@ -66,6 +50,15 @@ class ErrorCode(Enum):
     INVALID_SENSE_MODE                = 172
     INVALID_GUARD_MODE                = 173
     INVALID_COMMAND                   = 175
+
+class ModeType(Enum):
+    NORMAL = "BSTO"
+    VOLTAGE_BOOST = "BSTV"
+    CURRENT_BOOST = "BSTC"
+
+class SeparatorType(Enum):
+    COMMA = 0
+    COLON = 1
 
 class State(Enum):
     IDLE                     = 0
@@ -107,12 +100,12 @@ class State(Enum):
     WRITING_TO_NVRAM         = 224
     RESETTING                = 240
 
-class SrqMask(Flag):
-    NONE                = 0b0
-    DOING_STATE_CHANGE  = 1 << 2
-    MSG_RDY             = 1 << 3
-    OUTPUT_SETTLED      = 1 << 4
-    ERROR_CONDITION     = 1 << 5
+class TerminatorType(Enum):
+    EOI       = 0
+    CR_LF_EOI = 1
+    LF_EOI    = 2
+    CR_LF     = 3
+    LF        = 4
 
 class SerialPollFlags(Flag):
     NONE               = 0b0
@@ -121,6 +114,13 @@ class SerialPollFlags(Flag):
     OUTPUT_SETTLED     = 1 << 4
     ERROR_CONDITION    = 1 << 5
     SRQ                = 1 << 6
+
+class SrqMask(Flag):
+    NONE                = 0b0
+    DOING_STATE_CHANGE  = 1 << 2
+    MSG_RDY             = 1 << 3
+    OUTPUT_SETTLED      = 1 << 4
+    ERROR_CONDITION     = 1 << 5
 
 class StatusFlags(Flag):
     VOLTAGE_MODE           = 1 << 0
