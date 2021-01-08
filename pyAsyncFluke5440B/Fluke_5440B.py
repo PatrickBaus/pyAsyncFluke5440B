@@ -269,7 +269,25 @@ class Fluke_5440B:
     async def get_output(self):
         return Decimal(await self.query("GOUT"))
 
+    def __limit_numeric(self, value):
+        # According to page 4-5 of the operator manual, the value needs to meet the follwing criteria:
+        # - Maximum of 8 significant digits
+        # - Exponent must have less than two digits
+        # - Intgers must be less than 256
+        # - 10e-12 < abs(value) < 10e8
+        # Limit to to 10*-8 resolution (10 nV is the minimum)
+        result = f"{value:.8f}"
+        if abs(value) >= 1:
+            # There are significant digits before the decimal point, so we need to limit the length of the string
+            # to 9 characters (decimal point + 8 significant digits)
+            result = f"{result:.9s}"
+        return result
+
     async def set_output(self, value, test_error=True):
+        if -1500 > value > 1500:
+            raise ValueError("Value out of range")
+        value = self.__limit_numeric(value)
+
         try:
             await self.write(f"SOUT {value}", test_error)
         except DeviceError as e:
@@ -303,8 +321,18 @@ class Fluke_5440B:
             return Decimal(result[1]), Decimal(result[0])
         else:
             return Decimal(result)
+
+    async def set_voltage_limit(self, value, value2):
+        if -1500 > value > 1500:
+            raise ValueError("Value out of range")
+        if -1500 > value2 > 1500:
+            raise ValueError("Value out of range")
+        value = self.__limit_numeric(value)
         try:
-            await self.write("SVLM {value:f}".format(value=value), test_error=True)
+            if value2 is not None:
+                value2 = self.__limit_numeric(value2)
+                await self.write(f"SVLM {value2}", test_error=True)
+            await self.write(f"SVLM {value}", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.LIMIT_OUT_OF_RANGE:
                 raise ValueError("Invalid voltage limit.") from None
@@ -319,9 +347,13 @@ class Fluke_5440B:
         else:
             return Decimal(result)
 
-    async def set_current_limit(self, value):
+    async def set_current_limit(self, value, value2=None):
+        value = self.__limit_numeric(value)
         try:
-            await self.write("SCLM {value:f}".format(value=value), test_error=True)
+            if value2 is not None:
+                value2 = self.__limit_numeric(value2)
+                await self.write(f"SCLM {value2}", test_error=True)
+            await self.write(f"SCLM {value}", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.LIMIT_OUT_OF_RANGE:
                 raise ValueError("Invalid current limit.")
