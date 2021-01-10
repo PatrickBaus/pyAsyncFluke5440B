@@ -29,6 +29,9 @@ class DeviceError(Exception):
 
         self.code = errorCode
 
+class SelftestError(DeviceError):
+    pass
+
 class ErrorCode(Enum):
     NONE                              = 0
     BOOST_INTERFACE_CONNECTION_ERROR  = 144
@@ -320,16 +323,18 @@ class Fluke_5440B:
     async def get_voltage_limit(self):
         # TODO: Needs testing for error when in current boost mode
         result = await self.query("GVLM", test_error=True)
-        if isinstance(result, list):
-            return Decimal(result[1]), Decimal(result[0])
-        else:
-            return Decimal(result)
+        return Decimal(result[1]), Decimal(result[0])
 
-    async def set_voltage_limit(self, value, value2):
+    async def set_voltage_limit(self, value, value2=None):
         if -1500 > value > 1500:
-            raise ValueError("Value out of range")
-        if -1500 > value2 > 1500:
-            raise ValueError("Value out of range")
+            raise ValueError("Value out of range.")
+        if value2 is not None:
+            if not (-1500 <= value2 <= 1500):
+                raise ValueError("Value out of range.")
+            elif not (value * value2 <= 0):
+                # Make sure, that one value is positive and one value negative or zero.
+                raise ValueError("Invalid voltage limit.")
+
         value = self.__limit_numeric(value)
         try:
             if value2 is not None:
@@ -351,6 +356,14 @@ class Fluke_5440B:
             return Decimal(result)
 
     async def set_current_limit(self, value, value2=None):
+        if -20 > value > 20:
+            raise ValueError("Value out of range.")
+        if value2 is not None:
+            if not (-20 <= value2 <= 20):
+                raise ValueError("Value out of range.")
+            if not (value * value2 <= 0):
+                raise ValueError("Invalid current limit.")
+
         value = self.__limit_numeric(value)
         try:
             if value2 is not None:
@@ -359,7 +372,7 @@ class Fluke_5440B:
             await self.write(f"SCLM {value}", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.LIMIT_OUT_OF_RANGE:
-                raise ValueError("Invalid current limit.")
+                raise ValueError("Invalid current limit.") from None
             else:
                 raise
 
@@ -401,6 +414,7 @@ class Fluke_5440B:
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning(f"Digital selftest failed with message: {msg}.")
+                        raise SelftestError(f"Digital selftest failed with message: {msg}.", msg)
                         return msg
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
@@ -412,7 +426,6 @@ class Fluke_5440B:
                             break
                         self.__logger.info(f"Selftest status: {state}.")
                 self.__logger.info("Digital selftest passed.")
-                return 0    # Return 0 on success
             finally:
                 await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
@@ -431,7 +444,7 @@ class Fluke_5440B:
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning(f"Analog selftest failed with message: {msg}.")
-                        return msg
+                        raise SelftestError(f"Analog selftest failed with message: {msg}.", msg)
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_LOW_VOLTAGE, State.SELF_TEST_OVEN):
@@ -442,7 +455,6 @@ class Fluke_5440B:
                             break
                         self.__logger.info(f"Selftest status: {state}.")
                 self.__logger.info("Analog selftest passed.")
-                return 0    # Return 0 on success
             finally:
                 await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
@@ -461,8 +473,7 @@ class Fluke_5440B:
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning(f"High voltage selftest failed with message: {msg}.")
-                        return msg
-
+                        raise SelftestError(f"High voltage selftest failed with message: {msg}.", msg)
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (State.IDLE, State.CALIBRATING_ADC, State.SELF_TEST_HIGH_VOLTAGE):
@@ -473,7 +484,6 @@ class Fluke_5440B:
                             break
                         self.__logger.info(f"Selftest status: {state}.")
                 self.__logger.info("High voltage selftest passed.")
-                return 0    # Return 0 on success
             finally:
                 await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
@@ -532,24 +542,6 @@ class Fluke_5440B:
             finally:
                 await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
-    async def get_baud_rate(self):
-        return BAUD_RATES_AVAILABLE[int(await self.query("GBDR", test_error=True))]
-
-    async def set_baud_rate(self, value):
-        assert (value in BAUD_RATES_AVAILABLE)
-        async with self.__lock:
-            self.__logger.info("Setting baud rate and writing to NVRAM. This takes about 1.5 minutes.")
-            try:
-                await self.write(f"SBDR {BAUD_RATES_AVAILABLE.index(value):d}", test_error=True)
-                await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait until written to NVRAM
-                await asyncio.sleep(0.5)
-                await self.__wait_for_idle()
-            finally:
-                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
-
-    async def set_enable_rs232(self, enabled):
-        await self.write("MONY" if enabled else "MONN", test_error=True)
-
     async def get_calibration_constants(self):
         async with self.__lock:
             # We need to split the query in two parts, because the input buffer of the 5440B is only 127 byte
@@ -578,12 +570,31 @@ class Fluke_5440B:
                 "a/d_gain": Decimal(result[19]),
             }
 
+    async def get_rs232_baud_rate(self):
+        return BAUD_RATES_AVAILABLE[int(await self.query("GBDR", test_error=True))]
+
+    async def set_rs232_baud_rate(self, value):
+        if not (value in BAUD_RATES_AVAILABLE):
+            raise ValueError("Invalid baud rate. It must be one of: 50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600.")
+        async with self.__lock:
+            self.__logger.info("Setting baud rate and writing to NVRAM. This takes about 1.5 minutes.")
+            try:
+                await self.write(f"SBDR {BAUD_RATES_AVAILABLE.index(value):d}", test_error=True)
+                await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)   # Enable SRQs to wait until written to NVRAM
+                await asyncio.sleep(0.5)
+                await self.__wait_for_idle()
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
+
+    async def set_enable_rs232(self, enabled):
+        await self.write("MONY" if enabled else "MONN", test_error=True)
+
     async def serial_poll(self):
         return SerialPollFlags(int(await self.__conn.serial_poll()))
+
+    async def get_srq_mask(self):
+        return SrqMask(int(await self.query("GSRQ")))
 
     async def set_srq_mask(self, value):
         assert isinstance(value, SrqMask)
         await self.write(f"SSRQ {value.value:d}")
-
-    async def get_srq_mask(self):
-        return SrqMask(int(await self.query("GSRQ")))
