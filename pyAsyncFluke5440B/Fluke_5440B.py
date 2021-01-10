@@ -567,7 +567,7 @@ class Fluke_5440B:
                 "gain_shift_250V": Decimal(result[16]),
                 "gain_shift_1000V": Decimal(result[17]),
                 "resolution_ratio": Decimal(result[18]),
-                "a/d_gain": Decimal(result[19]),
+                "adc_gain": Decimal(result[19]),
             }
 
     async def get_rs232_baud_rate(self):

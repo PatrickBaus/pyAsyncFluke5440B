@@ -301,7 +301,7 @@ Run the internal calibration routine. It will take about 6.5 minutes during whic
 Query the calibration constants and gain shifts with respect to the previous internal calibration. See page 3-18 of the operator manual for details. 
 
 ___Returns___
-* [Dict] : A dictionary containing `Decimal` values with the following keys: `gain_0.2V`, `gain_2V`, `gain_10V`, `gain_20V`, `gain_250V`, `gain_1000V`, `offset_10V_pos`, `offset_20V_pos`, `offset_250V_pos`, `offset_1000V_pos`, `offset_10V_neg`, `offset_20V_neg`, `offset_250V_neg`, `offset_1000V_neg`, `gain_shift_10V`, `gain_shift_20V`, `gain_shift_250V`, `gain_shift_1000V`, `resolution_ratio`, `a/d_gain`
+* [Dict] : A dictionary containing `Decimal` values with the following keys: `gain_0.2V`, `gain_2V`, `gain_10V`, `gain_20V`, `gain_250V`, `gain_1000V`, `offset_10V_pos`, `offset_20V_pos`, `offset_250V_pos`, `offset_1000V_pos`, `offset_10V_neg`, `offset_20V_neg`, `offset_250V_neg`, `offset_1000V_neg`, `gain_shift_10V`, `gain_shift_20V`, `gain_shift_250V`, `gain_shift_1000V`, `resolution_ratio`, `adc_gain`
 
 ```python
    async def get_rs232_baud_rate()

@@ -40,10 +40,56 @@ async def main():
         await fluke5440b.connect()
 
         # First run the selftest
-        logger.info("Running selftest, then autocalibration.")
+        print("Running selftest, then autocalibration.")
         await fluke5440b.selftest_all()
-        cal_constants = fluke5440b.get_calibration_constants()
-        logger.info(f"Calibration constants before running autocalibration:\nGain 0.2 V: {cal_constants[' 'gain_0.2V"]}")
+        print("Selftest done.")
+        cal_constants = await fluke5440b.get_calibration_constants()
+        print(("Calibration constants before running autocalibration:\n"
+               f"Gain 0.2 V      : {cal_constants['gain_0.2V']}\n"
+               f"Gain 2 V        : {cal_constants['gain_2V']}\n"
+               f"Gain 10 V       : {cal_constants['gain_10V']}\n"
+               f"Shift 10 V      : {cal_constants['gain_shift_10V']}\n"
+               f"Gain 20 V       : {cal_constants['gain_20V']}\n"
+               f"Shift 20 V      : {cal_constants['gain_shift_20V']}\n"
+               f"Gain 250 V      : {cal_constants['gain_250V']}\n"
+               f"Shift 250 V     : {cal_constants['gain_shift_250V']}\n"
+               f"Gain 1000 V     : {cal_constants['gain_1000V']}\n"
+               f"Shift 1000 V    : {cal_constants['gain_shift_1000V']}\n"
+               f"Offset +10 V    : {cal_constants['offset_10V_pos']}\n"
+               f"Offset -10 V    : {cal_constants['offset_10V_neg']}\n"
+               f"Offset +20 V    : {cal_constants['offset_20V_pos']}\n"
+               f"Offset -20 V    : {cal_constants['offset_20V_neg']}\n"
+               f"Offset +250 V   : {cal_constants['offset_250V_pos']}\n"
+               f"Offset -250 V   : {cal_constants['offset_250V_neg']}\n"
+               f"Offset +1000 V  : {cal_constants['offset_10V_pos']}\n"
+               f"Offset -1000 V  : {cal_constants['offset_10V_neg']}\n"
+               f"Resolution ratio: {cal_constants['resolution_ratio']}\n"
+               f"ADC gain        : {cal_constants['a/d_gain']}")
+        )
+        await fluke5440b.acal()
+        cal_constants = await fluke5440b.get_calibration_constants()
+        print(("Calibration constants after running autocalibration:\n"
+               f"Gain 0.2 V      : {cal_constants['gain_0.2V']}\n"
+               f"Gain 2 V        : {cal_constants['gain_2V']}\n"
+               f"Gain 10 V       : {cal_constants['gain_10V']}\n"
+               f"Shift 10 V      : {cal_constants['gain_shift_10V']}\n"
+               f"Gain 20 V       : {cal_constants['gain_20V']}\n"
+               f"Shift 20 V      : {cal_constants['gain_shift_20V']}\n"
+               f"Gain 250 V      : {cal_constants['gain_250V']}\n"
+               f"Shift 250 V     : {cal_constants['gain_shift_250V']}\n"
+               f"Gain 1000 V     : {cal_constants['gain_1000V']}\n"
+               f"Shift 1000 V    : {cal_constants['gain_shift_1000V']}\n"
+               f"Offset +10 V    : {cal_constants['offset_10V_pos']}\n"
+               f"Offset -10 V    : {cal_constants['offset_10V_neg']}\n"
+               f"Offset +20 V    : {cal_constants['offset_20V_pos']}\n"
+               f"Offset -20 V    : {cal_constants['offset_20V_neg']}\n"
+               f"Offset +250 V   : {cal_constants['offset_250V_pos']}\n"
+               f"Offset -250 V   : {cal_constants['offset_250V_neg']}\n"
+               f"Offset +1000 V  : {cal_constants['offset_10V_pos']}\n"
+               f"Offset -1000 V  : {cal_constants['offset_10V_neg']}\n"
+               f"Resolution ratio: {cal_constants['resolution_ratio']}\n"
+               f"ADC gain        : {cal_constants['a/d_gain']}")
+        )
     finally:
         # Disconnect from the HP 3478A. We may safely call diconnect() on a non-connected device, even
         # in case of a connection error
@@ -51,6 +97,11 @@ async def main():
 
 # Report all mistakes managing asynchronous resources.
 warnings.simplefilter('always', ResourceWarning)
+logging.basicConfig(
+    format='%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s',
+    level=logging.WARNING,    # Enable logs from the ip connection. Set to debug for even more info
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 try:
     asyncio.run(main(), debug=False)
