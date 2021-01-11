@@ -28,7 +28,11 @@ sys.path.append("..") # Adds main directory to python modules path.
 from pyAsyncFluke5440B.Fluke_5440B import Fluke_5440B
 from pyAsyncGpib.pyAsyncGpib.AsyncGpib import AsyncGpib
 
-fluke5440b = Fluke_5440B(connection=AsyncGpib(name=0, pad=7))
+# Set the timeout to 100 seconds (T100s=15)
+fluke5440b = Fluke_5440B(connection=AsyncGpib(name=0, pad=7, timeout=15))
+gpib_board = Gpib(name=0)
+gpib_board.config(0x7, True)   # enable wait for SRQs to speed up waiting for state changes
+gpib_board.close()
 
 # This example will log resistance data to the console
 async def main():

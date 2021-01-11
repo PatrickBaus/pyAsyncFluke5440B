@@ -29,7 +29,11 @@ sys.path.append("..") # Adds main directory to python modules path.
 from pyAsyncFluke5440B.Fluke_5440B import Fluke_5440B
 from pyAsyncGpib.pyAsyncGpib.AsyncGpib import AsyncGpib
 
-fluke5440b = Fluke_5440B(connection=AsyncGpib(name=0, pad=7))
+# Set the timeout to 100 seconds (T100s=15)
+fluke5440b = Fluke_5440B(connection=AsyncGpib(name=0, pad=7, timeout=15))
+gpib_board = Gpib(name=0)
+gpib_board.config(0x7, True)   # enable wait for SRQs to speed up waiting for state changes
+gpib_board.close()
 
 # This example will log resistance data to the console
 async def main():
@@ -62,7 +66,7 @@ async def main():
                f"Offset +1000 V  : {cal_constants['offset_10V_pos']}\n"
                f"Offset -1000 V  : {cal_constants['offset_10V_neg']}\n"
                f"Resolution ratio: {cal_constants['resolution_ratio']}\n"
-               f"ADC gain        : {cal_constants['a/d_gain']}")
+               f"ADC gain        : {cal_constants['adc_gain']}")
         )
         await fluke5440b.acal()
         cal_constants = await fluke5440b.get_calibration_constants()
@@ -86,7 +90,7 @@ async def main():
                f"Offset +1000 V  : {cal_constants['offset_10V_pos']}\n"
                f"Offset -1000 V  : {cal_constants['offset_10V_neg']}\n"
                f"Resolution ratio: {cal_constants['resolution_ratio']}\n"
-               f"ADC gain        : {cal_constants['a/d_gain']}")
+               f"ADC gain        : {cal_constants['adc_gain']}")
         )
     finally:
         # Disconnect from the HP 3478A. We may safely call diconnect() on a non-connected device, even
