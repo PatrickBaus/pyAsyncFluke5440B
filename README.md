@@ -20,7 +20,7 @@ There are currently no packages available. To install the library, clone the rep
 [~/linux-gpib-code/].
 
 ```bash
-virtualenv env  # virtual environment, optional
+python3 -m venv env  # virtual environment, optional
 source env/bin/activate
 pip install -r requirements.txt
 # pip install -e ~/linux-gpib-code/linux-gpib-user/language/python/
