@@ -386,12 +386,10 @@ class Fluke_5440B:
         return State(int(await self.query("GDNG")))
 
     async def __wait_for_rqs(self):
-        await self.__conn.wait((1 << 11) | (1<<14))    # Wait for RQS or TIMO
-        if hasattr(self.__conn, "ibsta"):
-            ibsta = await self.__conn.ibsta()
-            # Check for timeout
-            if ibsta & (1 << 14):
-                self.__logger.warning("Timeout during wait. Is the IbaAUTOPOLL(0x7) bit set for the board or the timeout set too low?")
+        try:
+            await self.__conn.wait((1 << 11) | (1<<14))    # Wait for RQS or TIMO
+        except asyncio.TimeoutError:
+            self.__logger.warning("Timeout during wait. Is the IbaAUTOPOLL(0x7) bit set for the board? Or the timeout set too low?")
 
     async def __wait_for_idle(self):
         """
