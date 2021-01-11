@@ -26,7 +26,6 @@ sys.path.append("..") # Adds main directory to python modules path.
 
 # Devices
 from pyAsyncFluke5440B.Fluke_5440B import Fluke_5440B
-
 from pyAsyncGpib.pyAsyncGpib.AsyncGpib import AsyncGpib
 
 fluke5440b = Fluke_5440B(connection=AsyncGpib(name=0, pad=7))
