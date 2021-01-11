@@ -159,9 +159,6 @@ class Fluke_5440B:
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
             await self.__conn.set_eot(False)
-        elif hasattr(self.__conn, "set_auto_polling"):
-            # Used by linux-gpib
-            await self.__conn.set_auto_polling(True)             # Enable RQS by auto polling ibsta on SRQ
 
         async with self.__lock:
             status = await self.serial_poll()              # clears the SRQ bit
@@ -388,6 +385,14 @@ class Fluke_5440B:
     async def get_state(self):
         return State(int(await self.query("GDNG")))
 
+    async def __wait_for_rqs(self):
+        await self.__conn.wait((1 << 11) | (1<<14))    # Wait for RQS or TIMO
+        if hasattr(self.__conn, "ibsta"):
+            ibsta = await self.__conn.ibsta()
+            # Check for timeout
+            if ibsta & (1 << 14):
+                self.__logger.warning("Timeout during wait. Is the IbaAUTOPOLL(0x7) bit set for the board or the timeout set too low?")
+
     async def __wait_for_idle(self):
         """
         Make sure, that SrqMask.DOING_STATE_CHANGE is set.
@@ -395,7 +400,7 @@ class Fluke_5440B:
         state = await self.get_state()
         while state != State.IDLE:
             self.__logger.info(f"Calibrator busy: {state}.")
-            await self.__conn.wait(1 << 11)    # Wait for RQS
+            await self.__wait_for_rqs()
             await self.serial_poll()           # Clear the SRQ bit
             state = await self.get_state()
 
@@ -409,7 +414,7 @@ class Fluke_5440B:
 
                 await self.write("TSTD", test_error=True)
                 while "testing":
-                    await self.__conn.wait(1 << 11)    # Wait for RQS
+                    await self.__wait_for_rqs()
                     status = await self.serial_poll()  # Clear SRQ
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
@@ -439,7 +444,7 @@ class Fluke_5440B:
 
                 await self.write("TSTA", test_error=True)
                 while "testing":
-                    await self.__conn.wait(1 << 11)    # Wait for RQS
+                    await self.__wait_for_rqs()
                     status = await self.serial_poll()  # Clear SRQ
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
@@ -468,7 +473,7 @@ class Fluke_5440B:
 
                 await self.write("TSTH", test_error=True)
                 while "testing":
-                    await self.__conn.wait(1 << 11)    # Wait for RQS
+                    await self.__wait_for_rqs()
                     status = await self.serial_poll()  # Clear SRQ
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
@@ -509,7 +514,7 @@ class Fluke_5440B:
 
                 await self.write("CALI", test_error=True)
                 while "calibrating":
-                    await self.__conn.wait(1 << 11)    # Wait for RQS
+                    await self.__wait_for_rqs()
                     status = await self.serial_poll()  # Clear SRQ
                     state = await self.get_state()
                     if state not in (
