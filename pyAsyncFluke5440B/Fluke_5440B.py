@@ -399,7 +399,16 @@ class Fluke_5440B:
         while state != State.IDLE:
             self.__logger.info(f"Calibrator busy: {state}.")
             await self.__wait_for_rqs()
-            await self.serial_poll()           # Clear the SRQ bit
+            spoll = await self.serial_poll()           # Clear the SRQ bit
+            if spoll & SerialPollFlags.ERROR_CONDITION:
+                # If there was an error during waiting, raise it.
+                # I have seen GPIB_HANDSHAKE_ERRORs with a prologix adapter, which does a lot of polling during wait.
+                # Ignore that error for now.
+                err = await self.get_error()
+                if err is ErrorCode.GPIB_HANDSHAKE_ERROR:
+                    self.__logger.info(f"Got error during waiting: {err}. If you are using a Prologix adapter, this can be safely ignored at this point.")
+                else:
+                    raise DeviceError(f"Device error, code: {err}", err)
             state = await self.get_state()
 
     async def selftest_digital(self):

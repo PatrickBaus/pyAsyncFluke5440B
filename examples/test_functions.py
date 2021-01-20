@@ -47,7 +47,7 @@ async def test_getters():
     print(await fluke5440b.get_output())
     print(await fluke5440b.get_voltage_limit())
     print(await fluke5440b.get_current_limit())
-    print(await fluke5440b.get_baud_rate())
+    print(await fluke5440b.get_rs232_baud_rate())
     print(await fluke5440b.get_srq_mask())
     print(await fluke5440b.get_calibration_constants())  # needs a lock, when running
 
