@@ -9,7 +9,7 @@ Python3 AsyncIO Fluke 5440B driver. This library requires Python [asyncio](https
 ## Supported GPIB Hardware
 |Device|Supported|Tested|Comments|
 |--|--|--|--|
-|[AsyncIO Prologix GPIB library](https://github.com/PatrickBaus/pyAsyncPrologixGpib)|:heavy_check_mark:|:x:|  |
+|[AsyncIO Prologix GPIB library](https://github.com/PatrickBaus/pyAsyncPrologixGpib)|:heavy_check_mark:|:heavy_check_mark:|  |
 |[AsyncIO linux-gpib wrapper](https://github.com/PatrickBaus/pyAsyncGpib)|:heavy_check_mark:|:heavy_check_mark:|To be released
 
 Tested using Linux, should work for Mac OSX, Windows and any OS with Python support.
@@ -27,6 +27,10 @@ pip install -r requirements.txt
 ```
 
 ## Usage
+> :warning: The calibrator does not like excessive serial polling. So, when using the Prologix adapter, one might see warnings like this:
+> _Got error during waiting: ErrorCode.GPIB_HANDSHAKE_ERROR. If you are using a Prologix adapter, this can be safely ignored at this point._
+> These are harmless and can be ignored.
+
 All examples assume, that the GPIB library is copied to the same root folder as the library. Either run
 ```bash
 git clone https://github.com/PatrickBaus/pyAsyncPrologixGpib    # or alternativeliy
