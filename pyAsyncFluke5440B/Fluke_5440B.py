@@ -201,10 +201,19 @@ class Fluke_5440B:
 
         await self.__conn.write(cmd)
         if test_error:
-            await asyncio.sleep(0.2)    # The device is slow in parsing commands
-            if (await self.serial_poll()) & SerialPollFlags.ERROR_CONDITION:
+            await asyncio.sleep(0.2)    # The instrument is slow in parsing commands
+            spoll = await self.serial_poll()
+            if spoll & SerialPollFlags.ERROR_CONDITION:
+                msg = None
+                if spoll & SerialPollFlags.MSG_RDY:
+                    # The command did return some msg, so we need to read that first (and drop it)
+                    msg = await self.read()
+
                 err = await self.get_error()
-                raise DeviceError(f"Device error on command: {cmd}, code: {err}", err)
+                if msg is None:
+                    raise DeviceError(f"Device error on command: {cmd}, code: {err}", err)
+                else:
+                    raise DeviceError(f"Device error on command: {cmd}, code: {err}, Message returned: {msg}", err)
 
     async def read(self):
         result = (await self.__conn.read()).rstrip().decode("utf-8").split(",")  # strip \n and split at the seprator
@@ -238,7 +247,7 @@ class Fluke_5440B:
 
     async def get_terminator(self):
         async with self.__lock:
-            return TerminatorType(int(await self.query("GTRM")))
+            return TerminatorType(int(await self.query("GTRM", test_error=True)))
 
     async def __set_terminator(self, value):
         """
@@ -249,7 +258,7 @@ class Fluke_5440B:
         await self.__wait_for_state_change()
 
     async def get_separator(self):
-        return SeparatorType(int(await self.query("GSEP")))
+        return SeparatorType(int(await self.query("GSEP", test_error=True)))
 
     async def __set_separator(self, value):
         """
@@ -267,7 +276,7 @@ class Fluke_5440B:
         await self.write("OPER" if enabled else "STBY", test_error=True)
 
     async def get_output(self):
-        return Decimal(await self.query("GOUT"))
+        return Decimal(await self.query("GOUT", test_error=True))
 
     def __limit_numeric(self, value):
         # According to page 4-5 of the operator manual, the value needs to meet the follwing criteria:
@@ -374,16 +383,16 @@ class Fluke_5440B:
                 raise
 
     async def _get_software_version(self):
-        return await self.query("GVRS")
+        return await self.query("GVRS", test_error=True)
 
     async def get_status(self):
-        return StatusFlags(int(await self.query("GSTS")))
+        return StatusFlags(int(await self.query("GSTS", test_error=True)))
 
     async def get_error(self):
         return ErrorCode(int(await self.query("GERR")))
 
     async def get_state(self):
-        return State(int(await self.query("GDNG")))
+        return State(int(await self.query("GDNG", test_error=True)))
 
     async def __wait_for_rqs(self):
         try:
@@ -605,8 +614,8 @@ class Fluke_5440B:
         return SerialPollFlags(int(await self.__conn.serial_poll()))
 
     async def get_srq_mask(self):
-        return SrqMask(int(await self.query("GSRQ")))
+        return SrqMask(int(await self.query("GSRQ", test_error=True)))
 
     async def set_srq_mask(self, value):
         assert isinstance(value, SrqMask)
-        await self.write(f"SSRQ {value.value:d}")
+        await self.write(f"SSRQ {value.value:d}", test_error=True)
