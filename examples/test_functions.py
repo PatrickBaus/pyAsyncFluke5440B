@@ -30,15 +30,21 @@ sys.path.append("..") # Adds main directory to python modules path.
 # Devices
 from pyAsyncFluke5440B.Fluke_5440B import Fluke_5440B, SrqMask, SerialPollFlags, ModeType
 
+# Uncomment if using a Prologix GPIB Ethernet adapter
+#from pyAsyncPrologixGpib.pyAsyncPrologixGpib.pyAsyncPrologixGpib import AsyncPrologixGpibEthernetController
+# Set the timeout to 100 seconds (100 000 ms) and limit the number of serial polls to 1/s (1000 ms delay), when waiting for a SRQ
+#gpib_device = AsyncPrologixGpibEthernetController('127.0.0.1', pad=7, timeout=100*1000, wait_delay=1000)   # Prologix GPIB Adapter
+
+# Uncomment if using linux-gpib
 from Gpib import Gpib
 from pyAsyncGpib.pyAsyncGpib.AsyncGpib import AsyncGpib
-
 # Set the timeout to 100 seconds (T100s=15)
-fluke5440b = Fluke_5440B(connection=AsyncGpib(name=0, pad=7, timeout=15))
+gpib_device = AsyncGpib(name=0, pad=7, timeout=15)    # NI GPIB adapter
 gpib_board = Gpib(name=0)
 gpib_board.config(0x7, True)   # enable wait for SRQs to speed up waiting for state changes
 gpib_board.close()
 
+fluke5440b = Fluke_5440B(connection=gpib_device)
 
 async def test_getters():
     print(await fluke5440b.get_id())
@@ -79,12 +85,12 @@ async def test_setters():
 # This example will log resistance data to the console
 async def main():
     try:
-        # No need to explicitely bring up the GPIB connection. This will be done by the Fluke 5440B
+        # No need to explicitly bring up the GPIB connection. This will be done by the instrument.
         await fluke5440b.connect()
         await test_getters()
         await test_setters()
     finally:
-        # Disconnect from the HP 3478A. We may safely call diconnect() on a non-connected device, even
+        # Disconnect from the instrument. We may safely call disconnect() on a non-connected device, even
         # in case of a connection error
         await fluke5440b.disconnect()
 
