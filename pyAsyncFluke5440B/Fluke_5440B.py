@@ -400,6 +400,17 @@ class Fluke_5440B:
         except asyncio.TimeoutError:
             self.__logger.warning("Timeout during wait. Is the IbaAUTOPOLL(0x7) bit set for the board? Or the timeout set too low?")
 
+        spoll = await self.serial_poll()           # Clear the SRQ bit
+        if spoll & SerialPollFlags.ERROR_CONDITION:
+            # If there was an error during waiting, raise it.
+            # I have seen GPIB_HANDSHAKE_ERRORs with a prologix adapter, which does a lot of polling during wait.
+            # Ignore that error for now.
+            err = await self.get_error()
+            if err is ErrorCode.GPIB_HANDSHAKE_ERROR:
+                self.__logger.info(f"Got error during waiting: {err}. If you are using a Prologix adapter, this can be safely ignored at this point.")
+            else:
+                raise DeviceError(f"Device error, code: {err}", err)
+
     async def __wait_for_idle(self):
         """
         Make sure, that SrqMask.DOING_STATE_CHANGE is set.
@@ -408,16 +419,6 @@ class Fluke_5440B:
         while state != State.IDLE:
             self.__logger.info(f"Calibrator busy: {state}.")
             await self.__wait_for_rqs()
-            spoll = await self.serial_poll()           # Clear the SRQ bit
-            if spoll & SerialPollFlags.ERROR_CONDITION:
-                # If there was an error during waiting, raise it.
-                # I have seen GPIB_HANDSHAKE_ERRORs with a prologix adapter, which does a lot of polling during wait.
-                # Ignore that error for now.
-                err = await self.get_error()
-                if err is ErrorCode.GPIB_HANDSHAKE_ERROR:
-                    self.__logger.info(f"Got error during waiting: {err}. If you are using a Prologix adapter, this can be safely ignored at this point.")
-                else:
-                    raise DeviceError(f"Device error, code: {err}", err)
             state = await self.get_state()
 
     async def selftest_digital(self):
@@ -426,12 +427,11 @@ class Fluke_5440B:
             try:
                 self.__logger.info("Running digital selftest. This takes about 5 seconds.")
                 await self.__wait_for_idle()
-                await self.get_error()          # Clear the error flag if set
 
                 await self.write("TSTD", test_error=True)
                 while "testing":
                     await self.__wait_for_rqs()
-                    status = await self.serial_poll()  # Clear SRQ
+                    status = await self.serial_poll()
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning(f"Digital selftest failed with message: {msg}.")
@@ -456,12 +456,11 @@ class Fluke_5440B:
             try:
                 self.__logger.info("Running analog selftest. This takes about 4 minutes.")
                 await self.__wait_for_idle()
-                await self.get_error()          # Clear the error flag if set
 
                 await self.write("TSTA", test_error=True)
                 while "testing":
                     await self.__wait_for_rqs()
-                    status = await self.serial_poll()  # Clear SRQ
+                    status = await self.serial_poll()
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning(f"Analog selftest failed with message: {msg}.")
@@ -485,12 +484,11 @@ class Fluke_5440B:
             try:
                 self.__logger.info("Running high voltage selftest. This takes about 1 minute.")
                 await self.__wait_for_idle()
-                await self.get_error()          # Clear the error flag if set
 
                 await self.write("TSTH", test_error=True)
                 while "testing":
                     await self.__wait_for_rqs()
-                    status = await self.serial_poll()  # Clear SRQ
+                    status = await self.serial_poll()
                     if status & SerialPollFlags.MSG_RDY:
                         msg = await self.read()
                         self.__logger.warning(f"High voltage selftest failed with message: {msg}.")
@@ -526,12 +524,11 @@ class Fluke_5440B:
             try:
                 self.__logger.info("Running internal calibration. This will take about 6.5 minutes.")
                 await self.__wait_for_idle()
-                await self.get_error()          # Clear the error flag if set
 
                 await self.write("CALI", test_error=True)
                 while "calibrating":
                     await self.__wait_for_rqs()
-                    status = await self.serial_poll()  # Clear SRQ
+                    status = await self.serial_poll()
                     state = await self.get_state()
                     if state not in (
                         State.IDLE,
