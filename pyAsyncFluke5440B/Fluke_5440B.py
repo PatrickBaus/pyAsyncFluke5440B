@@ -507,16 +507,9 @@ class Fluke_5440B:
                 await self.set_srq_mask(SrqMask.NONE)   # Disable SRQs
 
     async def selftest_all(self):
-        result = await self.selftest_digital()
-        if result != 0:
-            return result
-
-        result = await self.selftest_analog()
-        if result != 0:
-            return result
-
-        result = await self.selftest_hv()
-        return result
+        await self.selftest_digital()
+        await self.selftest_analog()
+        await self.selftest_hv()
 
     async def acal(self):
         async with self.__lock:
@@ -554,7 +547,7 @@ class Fluke_5440B:
 
                     if state == State.IDLE:
                         break
-                        self.__logger.info(f"Calibration status: {state}")
+                    self.__logger.info(f"Calibration status: {state}")
                 self.__logger.info("Internal calibration done.")
                 return 0    # Return 0 on success
             finally:
