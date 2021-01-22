@@ -31,31 +31,34 @@ sys.path.append("..") # Adds main directory to python modules path.
 from pyAsyncFluke5440B.Fluke_5440B import Fluke_5440B, SrqMask, SerialPollFlags, ModeType
 
 # Uncomment if using a Prologix GPIB Ethernet adapter
-#from pyAsyncPrologixGpib.pyAsyncPrologixGpib.pyAsyncPrologixGpib import AsyncPrologixGpibEthernetController
-# Set the timeout to 100 seconds (100 000 ms) and limit the number of serial polls to 1/s (1000 ms delay), when waiting for a SRQ
-#gpib_device = AsyncPrologixGpibEthernetController('127.0.0.1', pad=7, timeout=100*1000, wait_delay=1000)   # Prologix GPIB Adapter
+from pyAsyncPrologixGpib.pyAsyncPrologixGpib.pyAsyncPrologixGpib import AsyncPrologixGpibEthernetController
+if 'pyAsyncPrologixGpib.pyAsyncPrologixGpib.pyAsyncPrologixGpib' in sys.modules:
+    ip_address = '127.0.0.1'
+    # Set the timeout to 300 seconds, State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
+    gpib_device = AsyncPrologixGpibEthernetController('127.0.0.1', pad=7, timeout=300*1000, wait_delay=250)   # Prologix GPIB Adapter
 
 # Uncomment if using linux-gpib
-from Gpib import Gpib
-from pyAsyncGpib.pyAsyncGpib.AsyncGpib import AsyncGpib
-# Set the timeout to 100 seconds (T100s=15)
-gpib_device = AsyncGpib(name=0, pad=7, timeout=15)    # NI GPIB adapter
-gpib_board = Gpib(name=0)
-gpib_board.config(0x7, True)   # enable wait for SRQs to speed up waiting for state changes
-gpib_board.close()
+#from pyAsyncGpib.pyAsyncGpib.AsyncGpib import AsyncGpib
+if 'pyAsyncGpib.pyAsyncGpib.AsyncGpib' in sys.modules:
+    # Set the timeout to 300 seconds (T300s=16), State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
+    gpib_device = AsyncGpib(name=0, pad=7, timeout=16)    # NI GPIB adapter
+    from Gpib import Gpib
+    gpib_board = Gpib(name=0)
+    gpib_board.config(0x7, True)   # enable wait for SRQs to speed up waiting for state changes
+    gpib_board.close()
 
 fluke5440b = Fluke_5440B(connection=gpib_device)
 
 async def test_getters():
-    print(await fluke5440b.get_id())
-    print(await fluke5440b.get_terminator())
-    print(await fluke5440b.get_separator())
-    print(await fluke5440b.get_output())
-    print(await fluke5440b.get_voltage_limit())
-    print(await fluke5440b.get_current_limit())
-    print(await fluke5440b.get_rs232_baud_rate())
-    print(await fluke5440b.get_srq_mask())
-    print(await fluke5440b.get_calibration_constants())  # needs a lock, when running
+    print('ID             :', await fluke5440b.get_id())
+    print('Terminator     :', await fluke5440b.get_terminator())
+    print('Separator      :', await fluke5440b.get_separator())
+    print('Output         :', await fluke5440b.get_output())
+    print('Voltage limit  :', await fluke5440b.get_voltage_limit())
+    print('Current limit  :', await fluke5440b.get_current_limit())
+    print('RS232 baud rate:', await fluke5440b.get_rs232_baud_rate())
+    print('SRQ mask       :', await fluke5440b.get_srq_mask())
+    print('Calibration constants:', await fluke5440b.get_calibration_constants())  # needs a lock, when running
 
 async def test_setters():
     # voltage limit
@@ -82,7 +85,7 @@ async def test_setters():
     await fluke5440b.set_rs232_baud_rate(baud_rate)
     assert(baud_rate == await fluke5440b.get_rs232_baud_rate())
 
-# This example will log resistance data to the console
+# This example will test most function of the calibrator
 async def main():
     try:
         # No need to explicitly bring up the GPIB connection. This will be done by the instrument.
