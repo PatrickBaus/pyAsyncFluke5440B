@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>fluke5440b_async.enums &#8212; fluke5440b_async v0.9.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nature.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">fluke5440b_async v0.9.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">fluke5440b_async.enums</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for fluke5440b_async.enums</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Enums are used to represent the device functions and settings.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+
+
+<div class="viewcode-block" id="ErrorCode"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.ErrorCode">[docs]</a><span class="k">class</span> <span class="nc">ErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The error codes used by the Fluke 5440B.&quot;&quot;&quot;</span>
+
+    <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BOOST_INTERFACE_CONNECTION_ERROR</span> <span class="o">=</span> <span class="mi">144</span>
+    <span class="n">BOOST_INTERFACE_MISSING</span> <span class="o">=</span> <span class="mi">145</span>
+    <span class="n">BOOST_INTERFACE_VOLTAGE_TRIP</span> <span class="o">=</span> <span class="mi">146</span>
+    <span class="n">BOOST_INTERFACE_CURRENT_TRIP</span> <span class="o">=</span> <span class="mi">147</span>
+    <span class="n">GPIB_HANDSHAKE_ERROR</span> <span class="o">=</span> <span class="mi">152</span>
+    <span class="n">TERMINATOR_ERROR</span> <span class="o">=</span> <span class="mi">153</span>
+    <span class="n">SEPARATOR_ERROR</span> <span class="o">=</span> <span class="mi">154</span>
+    <span class="n">UNKNOWN_COMMAND</span> <span class="o">=</span> <span class="mi">155</span>
+    <span class="n">INVALID_PARAMETER</span> <span class="o">=</span> <span class="mi">156</span>
+    <span class="n">BUFFER_OVERFLOW</span> <span class="o">=</span> <span class="mi">157</span>
+    <span class="n">INVALID_CHARACTER</span> <span class="o">=</span> <span class="mi">158</span>
+    <span class="n">RS232_ERROR</span> <span class="o">=</span> <span class="mi">160</span>
+    <span class="n">PARAMETER_OUT_OF_RANGE</span> <span class="o">=</span> <span class="mi">168</span>
+    <span class="n">OUTPUT_OUTSIDE_LIMITS</span> <span class="o">=</span> <span class="mi">169</span>
+    <span class="n">LIMIT_OUT_OF_RANGE</span> <span class="o">=</span> <span class="mi">170</span>
+    <span class="n">DIVIDER_OUT_OF_RANGE</span> <span class="o">=</span> <span class="mi">171</span>
+    <span class="n">INVALID_SENSE_MODE</span> <span class="o">=</span> <span class="mi">172</span>
+    <span class="n">INVALID_GUARD_MODE</span> <span class="o">=</span> <span class="mi">173</span>
+    <span class="n">INVALID_COMMAND</span> <span class="o">=</span> <span class="mi">175</span></div>
+
+
+<div class="viewcode-block" id="ModeType"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.ModeType">[docs]</a><span class="k">class</span> <span class="nc">ModeType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The output modes. Voltage boost means a connected Fluke 5205A power amplifier and current boost means a connected</span>
+<span class="sd">    Fluke 5220A transconductance amplifier.&quot;&quot;&quot;</span>
+
+    <span class="n">NORMAL</span> <span class="o">=</span> <span class="s2">&quot;BSTO&quot;</span>
+    <span class="n">VOLTAGE_BOOST</span> <span class="o">=</span> <span class="s2">&quot;BSTV&quot;</span>
+    <span class="n">CURRENT_BOOST</span> <span class="o">=</span> <span class="s2">&quot;BSTC&quot;</span></div>
+
+
+<div class="viewcode-block" id="SeparatorType"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.SeparatorType">[docs]</a><span class="k">class</span> <span class="nc">SeparatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The separator used to distinguish multiple return values.&quot;&quot;&quot;</span>
+
+    <span class="n">COMMA</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">COLON</span> <span class="o">=</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="DeviceState"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.DeviceState">[docs]</a><span class="k">class</span> <span class="nc">DeviceState</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The internal device state.&quot;&quot;&quot;</span>
+
+    <span class="n">IDLE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">CALIBRATING_ADC</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">ZEROING_10V_POS</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">ZEROING_10V_NEG</span> <span class="o">=</span> <span class="mi">33</span>
+    <span class="n">ZEROING_20V_POS</span> <span class="o">=</span> <span class="mi">34</span>
+    <span class="n">ZEROING_20V_NEG</span> <span class="o">=</span> <span class="mi">35</span>
+    <span class="n">ZEROING_250V_POS</span> <span class="o">=</span> <span class="mi">36</span>
+    <span class="n">ZEROING_250V_NEG</span> <span class="o">=</span> <span class="mi">37</span>
+    <span class="n">ZEROING_1000V_POS</span> <span class="o">=</span> <span class="mi">38</span>
+    <span class="n">ZEROING_1000V_NEG</span> <span class="o">=</span> <span class="mi">39</span>
+    <span class="n">CALIBRATING_GAIN_10V_POS</span> <span class="o">=</span> <span class="mi">48</span>
+    <span class="n">CALIBRATING_GAIN_20V_POS</span> <span class="o">=</span> <span class="mi">49</span>
+    <span class="n">CALIBRATING_GAIN_HV_POS</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">CALIBRATING_GAIN_HV_NEG</span> <span class="o">=</span> <span class="mi">51</span>
+    <span class="n">CALIBRATING_GAIN_20V_NEG</span> <span class="o">=</span> <span class="mi">52</span>
+    <span class="n">CALIBRATING_GAIN_10V_NEG</span> <span class="o">=</span> <span class="mi">53</span>
+    <span class="n">EXT_CAL_10V</span> <span class="o">=</span> <span class="mi">64</span>
+    <span class="n">EXT_CAL_20V</span> <span class="o">=</span> <span class="mi">65</span>
+    <span class="n">EXT_CAL_250V</span> <span class="o">=</span> <span class="mi">66</span>
+    <span class="n">EXT_CAL_1000V</span> <span class="o">=</span> <span class="mi">67</span>
+    <span class="n">EXT_CAL_2V</span> <span class="o">=</span> <span class="mi">68</span>
+    <span class="n">EXT_CAL_02V</span> <span class="o">=</span> <span class="mi">69</span>
+    <span class="n">EXT_CAL_10V_NULL</span> <span class="o">=</span> <span class="mi">80</span>
+    <span class="n">EXT_CAL_20V_NULL</span> <span class="o">=</span> <span class="mi">81</span>
+    <span class="n">EXT_CAL_250V_NULL</span> <span class="o">=</span> <span class="mi">82</span>
+    <span class="n">EXT_CAL_1000V_NULL</span> <span class="o">=</span> <span class="mi">83</span>
+    <span class="n">EXT_CAL_2V_NULL</span> <span class="o">=</span> <span class="mi">84</span>
+    <span class="n">EXT_CAL_02V_NULL</span> <span class="o">=</span> <span class="mi">85</span>
+    <span class="n">CAL_N1_N2_RATIO</span> <span class="o">=</span> <span class="mi">96</span>
+    <span class="n">SELF_TEST_MAIN_CPU</span> <span class="o">=</span> <span class="mi">112</span>
+    <span class="n">SELF_TEST_FRONTPANEL_CPU</span> <span class="o">=</span> <span class="mi">113</span>
+    <span class="n">SELF_TEST_GUARD_CPU</span> <span class="o">=</span> <span class="mi">114</span>
+    <span class="n">SELF_TEST_LOW_VOLTAGE</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">SELF_TEST_HIGH_VOLTAGE</span> <span class="o">=</span> <span class="mi">129</span>
+    <span class="n">SELF_TEST_OVEN</span> <span class="o">=</span> <span class="mi">130</span>
+    <span class="n">PRINTING</span> <span class="o">=</span> <span class="mi">208</span>
+    <span class="n">WRITING_TO_NVRAM</span> <span class="o">=</span> <span class="mi">224</span>
+    <span class="n">RESETTING</span> <span class="o">=</span> <span class="mi">240</span></div>
+
+
+<div class="viewcode-block" id="TerminatorType"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.TerminatorType">[docs]</a><span class="k">class</span> <span class="nc">TerminatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The line terminator used by the instrument.&quot;&quot;&quot;</span>
+
+    <span class="n">EOI</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">CR_LF_EOI</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">LF_EOI</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">CR_LF</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">LF</span> <span class="o">=</span> <span class="mi">4</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">fluke5440b_async v0.9.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">fluke5440b_async.enums</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Patrick Baus.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.0.
+    </div>
+  </body>
+</html>

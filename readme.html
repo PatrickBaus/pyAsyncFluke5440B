@@ -1,0 +1,720 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Readme &#8212; fluke5440b_async v0.9.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Module Documentation" href="modules.html" />
+    <link rel="prev" title="Home" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="Module Documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Home"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluke5440b_async v0.9.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Readme</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="readme">
+<h1>Readme<a class="headerlink" href="#readme" title="Permalink to this heading">¶</a></h1>
+<p><a class="reference external" href="https://github.com/PatrickBaus/pyAsyncHP3478A/actions/workflows/pylint.yml"><img alt="pylint" src="https://github.com/PatrickBaus/pyAsyncFluke5440B/actions/workflows/pylint.yml/badge.svg" /></a>
+<a class="reference external" href="https://pypi.org/project/fluke5440b_async/"><img alt="PyPI" src="https://img.shields.io/pypi/v/fluke5440b_async" /></a>
+<img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/fluke5440b_async" />
+<img alt="PyPI - Status" src="https://img.shields.io/pypi/status/fluke5440b_async" />
+<a class="reference external" href="https://github.com/psf/black"><img alt="code style" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a></p>
+<section id="fluke5440b-async">
+<h2>fluke5440b-async<a class="headerlink" href="#fluke5440b-async" title="Permalink to this heading">¶</a></h2>
+<p>Python3 AsyncIO Fluke 5440B driver. This library requires Python <a class="reference external" href="https://docs.python.org/3/library/asyncio.html">asyncio</a> and AsyncIO library for the GPIB adapter.</p>
+<p>The library is fully type-hinted.</p>
+<blockquote>
+<div><p>:warning: The following features are not supported (yet):</p>
+<ul class="simple">
+<li><p>External calibration: I do not have the means to test this. If you want to help, open a ticket and we can get this done</p></li>
+<li><p>Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that featuer open a ticket.</p></li>
+<li><p>Selftest. Fortunately, I only own a calibrator that passes the selft test, so I cannot test the self test function on a machine that throws errors. I have implemented the self test routines and from what I inferred from the manual, it <em>should</em> work with faulty machines and throw an exception, but who knows. If you can test this. I would be gratefuly about feedback.</p></li>
+</ul>
+</div></blockquote>
+<section id="supported-gpib-hardware">
+<h3>Supported GPIB Hardware<a class="headerlink" href="#supported-gpib-hardware" title="Permalink to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Device</p></th>
+<th class="head"><p>Supported</p></th>
+<th class="head"><p>Tested</p></th>
+<th class="head"><p>Comments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/PatrickBaus/pyAsyncPrologixGpib">AsyncIO Prologix GPIB library</a></p></td>
+<td><p>:heavy_check_mark:</p></td>
+<td><p>:heavy_check_mark:</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://github.com/PatrickBaus/pyAsyncGpib">AsyncIO linux-gpib wrapper</a></p></td>
+<td><p>:heavy_check_mark:</p></td>
+<td><p>:heavy_check_mark:</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p>Tested using Linux, but should work on Mac OSX, Windows or any OS with Python support.</p>
+</section>
+</section>
+<section id="setup">
+<h2>Setup<a class="headerlink" href="#setup" title="Permalink to this heading">¶</a></h2>
+<p>To install the library in a virtual environment (always use venvs with every project):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>env<span class="w">  </span><span class="c1"># virtual environment, optional</span>
+<span class="nb">source</span><span class="w"> </span>env/bin/activate<span class="w">  </span><span class="c1"># only if the virtual environment is used</span>
+pip<span class="w"> </span>install<span class="w"> </span>fluke5440b-async
+</pre></div>
+</div>
+<p>All examples assume that a GPIB library is installed as well. Either run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>prologix-gpib-async<span class="w">    </span><span class="c1"># or alternatively</span>
+<span class="c1"># pip install async-gpib</span>
+</pre></div>
+</div>
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this heading">¶</a></h3>
+<blockquote>
+<div><p>:warning: The calibrator does not like excessive serial polling. So, when using the Prologix adapter, one might see warnings like this:
+<em>Got error during waiting: ErrorCode.GPIB_HANDSHAKE_ERROR. If you are using a Prologix adapter, this can be safely ignored at this point.</em>
+These are harmless and can be ignored.</p>
+</div></blockquote>
+<p>The library uses an asynchronous context manager to make cleanup easier. You can use either the
+context manager syntax or invoke the calls manually:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">async</span> <span class="k">with</span> <span class="n">Fluke_5440B</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">gpib_device</span><span class="p">)</span> <span class="k">as</span> <span class="n">fluke5440b</span><span class="p">:</span>
+    <span class="c1"># Add your code here</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">fluke5440b</span> <span class="o">=</span> <span class="n">Fluke_5440B</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">gpib_device</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">fluke5440b</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="c1"># your code</span>
+<span class="k">finally</span><span class="p">:</span>
+    <span class="k">await</span> <span class="n">fluke5440b</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>A simple example for setting the output voltage.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyAsyncFluke5440B.Fluke_5440B</span> <span class="kn">import</span> <span class="n">Fluke_5440B</span>
+
+<span class="kn">from</span> <span class="nn">pyAsyncGpib.pyAsyncGpib.AsyncGpib</span> <span class="kn">import</span> <span class="n">AsyncGpib</span>
+
+
+<span class="c1"># This example will print voltage data to the console</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+   <span class="c1"># The default GPIB address is 7.</span>
+   <span class="k">async</span> <span class="k">with</span> <span class="n">Fluke_5440B</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">AsyncGpib</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span> <span class="k">as</span> <span class="n">fluke5440b</span><span class="p">:</span>
+        <span class="c1"># No need to explicitely bring up the GPIB connection. This will be done by the instrument.</span>
+        <span class="k">await</span> <span class="n">fluke5440b</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">await</span> <span class="n">fluke5440b</span><span class="o">.</span><span class="n">set_output</span><span class="p">(</span><span class="mf">10.0</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">fluke5440b</span><span class="o">.</span><span class="n">set_output_enabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Timeout. Error: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="k">await</span> <span class="n">fluke5440b</span><span class="o">.</span><span class="n">get_error</span><span class="p">())</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">(),</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+    <span class="c1"># The loop will be canceled on a KeyboardInterrupt by the run() method, we just want to suppress the exception</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>See <a href="#id1"><span class="problematic" id="id2">examples/</span></a> for more working examples.</p>
+<section id="methods">
+<h4>Methods<a class="headerlink" href="#methods" title="Permalink to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_id</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This function returns the instrument name and the software version string.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">connect</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Connect to the GPIB device. This function must be called from the loop and does all the setup of the GPIB adapter and the instrument.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">disconnect</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Disconnect from the instrument and clean up. This call will also automatically remove the local lockout if set.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">read</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Read the instrument buffer.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[string or list of strings] : Returns a UTF-8 encoded string or a list of strings if multiple commands where given.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>Write a string or bytestring to the instrument.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code> [string or Bytes] : If a string is given, it will be ASCII encoded.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_error</span></code> [bool] : If set, check if the command was accepted, otherwise raise an error. This will cause an extra roundtrip delay. The default is false, but its use is recommended.</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">DeviceError</span></code> if <code class="docutils literal notranslate"><span class="pre">test_error</span></code> is set and the command was not accepted by the instrument.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>Write a string or bytestring to the instrument and return the result.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code> [string or Bytes] : If a string is given, it will be ASCII encoded.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_error</span></code> [bool] : If set, check if the command was accepted, otherwise raise an error. This will cause an extra roundtrip delay. The default is false, but its use is recommended.</p></li>
+</ul>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[string or list of strings] : Returns a UTF-8 encoded string or a list of strings if multiple commands where given.</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">DeviceError</span></code> if <code class="docutils literal notranslate"><span class="pre">test_error</span></code> is set and the command was not accepted by the instrument.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Place the instrument in standby, enable voltage mode, set the output voltage to 0.0, disable the divider output, the external guard mode and external sense mode.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">local</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Enable the front panel buttons, if the instrument is in local lock out.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_terminator</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Returns the line terminator sent by the instrument.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[<a class="reference internal" href="#terminatortype"><span class="xref myst">TerminatorType</span></a>] : The type of terminator used.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_separator</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Returns the separator used by the instrument to separate multiple queries.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[<a class="reference internal" href="#separatortype"><span class="xref myst">SeparatorType</span></a>] : The type of terminator used.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_mode</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Enabled either voltage or current boost mode using an external Fluke 5205A power amplifier or a Fluke 5220A transconductance amplifier.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code> [<a class="reference internal" href="#modetype"><span class="xref myst">ModeType</span></a>] : The boost mode selected.</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">DeviceError</span></code> if there is problem connecting to the amplifier.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_output_enabled</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Sets the output to either standby or operating.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code> [bool] : Set to enable the output.</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">DeviceError</span></code> if an error is detected.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_output</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Returns the output currently set.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[Decimal] : The output as a <code class="docutils literal notranslate"><span class="pre">Decimal</span></code> to preserve the precision.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_output</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Set the output of the calibrator. If an output greater than ±22 V is set, the calibrator will automatically go to STBY for safety reasons. Call <code class="docutils literal notranslate"><span class="pre">set_output_enabled(True)</span></code> to reenable the output.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code> [float or Decimal] : The desired output.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_error</span></code> [bool] : If set, check if the command was accepted, otherwise raise an error.</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if the value is out of range. If the value is above or below ±1500 V, an error will be raised regardless of the <code class="docutils literal notranslate"><span class="pre">test_error</span></code> flag.</p></li>
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">DeviceError</span></code> if an error is detected.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_internal_sense</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If the load resistance is greater than 1 MΩ, 2-wire calibration can be used. Otherwise cable the resistance will reduce the accuracy. Use internal sense for 2-wire calibrations. See page 2-13 of the operator manual for details.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code> [bool] : If set, the voltage sense input internally connected to the output binding posts.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_internal_guard</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If set, the guard is internally connected to the output LO terminal. Use this, if the device being calibrated has floating inputs. If calibrating devices with grounded inputs, connect the guard terminal to the input LO of the device and disable the internal guard. See page 2-14 of the operator manual for details.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code> [bool] : Set to enable the internal guard or unset to float the internal guard.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_divider</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Enable the internal divider to reduce the output noise and increase the resolution. Do not enable the external sense connection via <code class="docutils literal notranslate"><span class="pre">set_internal_sense(False)</span></code> as this will decrease the accuracy. The divider has an output impedance of 450 Ω. The load should ideally be greater than 1 GΩ to keep the loading error below 1 ppm. See page 3-10 of the operator manual for details.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code> [bool] : Set to enable the divided output.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_voltage_limit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Get the voltage limit set on the instrument. It will raise an error, when in current boost mode.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[tuple of Decimals] : Returns the voltage limit as a tuple of (positive, negative)</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">DeviceError</span></code> when in current boost mode.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_voltage_limit</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">value2</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Set the upper or lower voltage limit.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code> [float or Decimal] : If one value is passed, the voltage limit will be set depending on the polarity of the value.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">value2</span></code> [float or Decimal] : If two values are passed, one needs to be negative and and both limits will be set.</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if the limits are out of bounds</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_current_limit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Get the current limit set on the instrument. This will raise an error, when in voltage boost mode.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[tuple of Decimals] : Returns the current limit as a tuple of (positive, negative)</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">DeviceError</span></code> when in voltage boost mode.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_current_limit</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">value2</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Set the upper or lower current limit.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code> [float or Decimal] : If one value is passed, the current limit will be set depending on the polarity of the value.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">value2</span></code> [float or Decimal] : If two values are passed, one needs to be negative and and both limits will be set.</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if the limits are out of bounds</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">selftest_digital</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Test the main CPU, the front panel CPU and the guard CPU. It will take about 5 seconds during which the instrument hardware is blocked. See page 3-19 of the operator manual for details.</p>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">SelftestError</span></code> on error.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">selftest_analog</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Test the ADC, the low voltage part and the oven. It will take about 4 minutes during which the instrument hardware is blocked. See page 3-19 of the operator manual for details.</p>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">SelftestError</span></code> on error.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">selftest_hv</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Test the ADC and the high voltage part. It will take about 1 minute during which the instrument hardware is blocked. See page 3-20 of the operator manual for details.</p>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">SelftestError</span></code> on error.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">selftest_all</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Run all three self-tests.</p>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">SelftestError</span></code> on error.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">acal</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Run the internal calibration routine. It will take about 6.5 minutes during which the instrument hardware is blocked. See page 3-2 of the operator manual for details.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_calibration_constants</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Query the calibration constants and gain shifts with respect to the previous internal calibration. See page 3-18 of the operator manual for details.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[Dict] : A dictionary containing <code class="docutils literal notranslate"><span class="pre">Decimal</span></code> values with the following keys: <code class="docutils literal notranslate"><span class="pre">gain_0.2V</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_2V</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_10V</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_20V</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_250V</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_1000V</span></code>, <code class="docutils literal notranslate"><span class="pre">offset_10V_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">offset_20V_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">offset_250V_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">offset_1000V_pos</span></code>, <code class="docutils literal notranslate"><span class="pre">offset_10V_neg</span></code>, <code class="docutils literal notranslate"><span class="pre">offset_20V_neg</span></code>, <code class="docutils literal notranslate"><span class="pre">offset_250V_neg</span></code>, <code class="docutils literal notranslate"><span class="pre">offset_1000V_neg</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_shift_10V</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_shift_20V</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_shift_250V</span></code>, <code class="docutils literal notranslate"><span class="pre">gain_shift_1000V</span></code>, <code class="docutils literal notranslate"><span class="pre">resolution_ratio</span></code>, <code class="docutils literal notranslate"><span class="pre">adc_gain</span></code></p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_rs232_baud_rate</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Return in the baud rate in bit/s.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_rs232_baud_rate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Set the baud rate of the RS-232 interface.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code> [int or float] : One out of the  following values: <code class="docutils literal notranslate"><span class="pre">50</span></code>, <code class="docutils literal notranslate"><span class="pre">75</span></code>, <code class="docutils literal notranslate"><span class="pre">110</span></code>, <code class="docutils literal notranslate"><span class="pre">134.5</span></code>, <code class="docutils literal notranslate"><span class="pre">150</span></code>, <code class="docutils literal notranslate"><span class="pre">200</span></code>, <code class="docutils literal notranslate"><span class="pre">300</span></code>, <code class="docutils literal notranslate"><span class="pre">600</span></code>, <code class="docutils literal notranslate"><span class="pre">1200</span></code>, <code class="docutils literal notranslate"><span class="pre">1800</span></code>, <code class="docutils literal notranslate"><span class="pre">2400</span></code>, <code class="docutils literal notranslate"><span class="pre">4800</span></code>, <code class="docutils literal notranslate"><span class="pre">9600</span></code>.</p></li>
+</ul>
+<p><em><strong>Raises</strong></em></p>
+<ul class="simple">
+<li><p>Raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> the value is invalid.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_enable_rs232</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Enable the RS-232 printer port.</p>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code> [bool] : Set to enable the printer port.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_status</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Get the status of the instrument. The status contains the mode the instrument is running in, like boost mode, or state of the external sense connection, etc.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[<a class="reference internal" href="#statusflags"><span class="xref myst">StatusFlags</span></a>] : The flags set resemble the status of the instrument.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_error</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Get the last error thrown by the instrument if any. It is recommended to check for errors after using the <code class="docutils literal notranslate"><span class="pre">write()</span></code> function, if the <code class="docutils literal notranslate"><span class="pre">test_error</span></code> parameter is not set.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[<a class="reference internal" href="#errorcode"><span class="xref myst">ErrorCode</span></a>] : Returns <code class="docutils literal notranslate"><span class="pre">ErrorCode.NONE</span></code> if there was no error or the error code if there was an error.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_state</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>If the instrument is running longterm jobs, it signals its current state. Use this to poll the state.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[<a class="reference internal" href="#state"><span class="xref myst">State</span></a>] : Returns <code class="docutils literal notranslate"><span class="pre">State.IDLE</span></code> if the instrument can accept new requests to change the hardware configuration.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">serial_poll</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Poll the serial output buffer of the device. This can be used to query for the SRQ bit, when device requests service, has encountered an error or is busy.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[<a class="reference internal" href="#serialpollflags"><span class="xref myst">SerialPollFlags</span></a>] : Returns a concise version of the current device state.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">get_srq_mask</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Get the SRQ mask. This mask is used to determine, when the device will pull down the SRQ line.</p>
+<p><em><strong>Returns</strong></em></p>
+<ul class="simple">
+<li><p>[<a class="reference internal" href="#srqmask"><span class="xref myst">SrqMask</span></a>] : Each field set, will trigger an SRQ request when encountered.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>   <span class="k">async</span> <span class="k">def</span> <span class="nf">set_srq_mask</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><em><strong>Arguments</strong></em></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code> [<a class="reference internal" href="#srqmask"><span class="xref myst">SrqMask</span></a>] : The mask to select on which condition an SRQ request is triggered by the device.</p></li>
+</ul>
+</section>
+<section id="enums">
+<h4>Enums<a class="headerlink" href="#enums" title="Permalink to this heading">¶</a></h4>
+<section id="errorcode">
+<h5>ErrorCode<a class="headerlink" href="#errorcode" title="Permalink to this heading">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">NONE</span>                              <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BOOST_INTERFACE_CONNECTION_ERROR</span>  <span class="o">=</span> <span class="mi">144</span>
+    <span class="n">BOOST_INTERFACE_MISSING</span>           <span class="o">=</span> <span class="mi">145</span>
+    <span class="n">BOOST_INTERFACE_VOLTAGE_TRIP</span>      <span class="o">=</span> <span class="mi">146</span>
+    <span class="n">BOOST_INTERFACE_CURRENT_TRIP</span>      <span class="o">=</span> <span class="mi">147</span>
+    <span class="n">GPIB_HANDSHAKE_ERROR</span>              <span class="o">=</span> <span class="mi">152</span>
+    <span class="n">TERMINATOR_ERROR</span>                  <span class="o">=</span> <span class="mi">153</span>
+    <span class="n">SEPARATOR_ERROR</span>                   <span class="o">=</span> <span class="mi">154</span>
+    <span class="n">UNKNOWN_COMMAND</span>                   <span class="o">=</span> <span class="mi">155</span>
+    <span class="n">INVALID_PARAMETER</span>                 <span class="o">=</span> <span class="mi">156</span>
+    <span class="n">BUFFER_OVERFLOW</span>                   <span class="o">=</span> <span class="mi">157</span>
+    <span class="n">INVALID_CHARACTER</span>                 <span class="o">=</span> <span class="mi">158</span>
+    <span class="n">RS232_ERROR</span>                       <span class="o">=</span> <span class="mi">160</span>
+    <span class="n">PARAMETER_OUT_OF_RANGE</span>            <span class="o">=</span> <span class="mi">168</span>
+    <span class="n">OUTPUT_OUTSIDE_LIMITS</span>             <span class="o">=</span> <span class="mi">169</span>
+    <span class="n">LIMIT_OUT_OF_RANGE</span>                <span class="o">=</span> <span class="mi">170</span>
+    <span class="n">DIVIDER_OUT_OF_RANGE</span>              <span class="o">=</span> <span class="mi">171</span>
+    <span class="n">INVALID_SENSE_MODE</span>                <span class="o">=</span> <span class="mi">172</span>
+    <span class="n">INVALID_GUARD_MODE</span>                <span class="o">=</span> <span class="mi">173</span>
+    <span class="n">INVALID_COMMAND</span>                   <span class="o">=</span> <span class="mi">175</span>
+</pre></div>
+</div>
+</section>
+<section id="modetype">
+<h5>ModeType<a class="headerlink" href="#modetype" title="Permalink to this heading">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ModeType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">NORMAL</span> <span class="o">=</span> <span class="s2">&quot;BSTO&quot;</span>
+    <span class="n">VOLTAGE_BOOST</span> <span class="o">=</span> <span class="s2">&quot;BSTV&quot;</span>
+    <span class="n">CURRENT_BOOST</span> <span class="o">=</span> <span class="s2">&quot;BSTC&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="terminatortype">
+<h5>TerminatorType<a class="headerlink" href="#terminatortype" title="Permalink to this heading">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">TerminatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">EOI</span>       <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">CR_LF_EOI</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">LF_EOI</span>    <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">CR_LF</span>     <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">LF</span>        <span class="o">=</span> <span class="mi">4</span>
+</pre></div>
+</div>
+</section>
+<section id="separatortype">
+<h5>SeparatorType<a class="headerlink" href="#separatortype" title="Permalink to this heading">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SeparatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">COMMA</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">COLON</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+<section id="state">
+<h5>State<a class="headerlink" href="#state" title="Permalink to this heading">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">IDLE</span>                     <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">CALIBRATING_ADC</span>          <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">ZEROING_10V_pos</span>          <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">ZEROING_10V_neg</span>          <span class="o">=</span> <span class="mi">33</span>
+    <span class="n">ZEROING_20V_pos</span>          <span class="o">=</span> <span class="mi">34</span>
+    <span class="n">ZEROING_20V_neg</span>          <span class="o">=</span> <span class="mi">35</span>
+    <span class="n">ZEROING_250V_pos</span>         <span class="o">=</span> <span class="mi">36</span>
+    <span class="n">ZEROING_250V_neg</span>         <span class="o">=</span> <span class="mi">37</span>
+    <span class="n">ZEROING_1000V_pos</span>        <span class="o">=</span> <span class="mi">38</span>
+    <span class="n">ZEROING_1000V_neg</span>        <span class="o">=</span> <span class="mi">39</span>
+    <span class="n">CALIBRATING_GAIN_10V_pos</span> <span class="o">=</span> <span class="mi">48</span>
+    <span class="n">CALIBRATING_GAIN_20V_pos</span> <span class="o">=</span> <span class="mi">49</span>
+    <span class="n">CALIBRATING_GAIN_HV_pos</span>  <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">CALIBRATING_GAIN_HV_neg</span>  <span class="o">=</span> <span class="mi">51</span>
+    <span class="n">CALIBRATING_GAIN_20V_neg</span> <span class="o">=</span> <span class="mi">52</span>
+    <span class="n">CALIBRATING_GAIN_10V_neg</span> <span class="o">=</span> <span class="mi">53</span>
+    <span class="n">EXT_CAL_10V</span>              <span class="o">=</span> <span class="mi">64</span>
+    <span class="n">EXT_CAL_20V</span>              <span class="o">=</span> <span class="mi">65</span>
+    <span class="n">EXT_CAL_250V</span>             <span class="o">=</span> <span class="mi">66</span>
+    <span class="n">EXT_CAL_1000V</span>            <span class="o">=</span> <span class="mi">67</span>
+    <span class="n">EXT_CAL_2V</span>               <span class="o">=</span> <span class="mi">68</span>
+    <span class="n">EXT_CAL_02V</span>              <span class="o">=</span> <span class="mi">69</span>
+    <span class="n">EXT_CAL_10V_NULL</span>         <span class="o">=</span> <span class="mi">80</span>
+    <span class="n">EXT_CAL_20V_NULL</span>         <span class="o">=</span> <span class="mi">81</span>
+    <span class="n">EXT_CAL_250V_NULL</span>        <span class="o">=</span> <span class="mi">82</span>
+    <span class="n">EXT_CAL_1000V_NULL</span>       <span class="o">=</span> <span class="mi">83</span>
+    <span class="n">EXT_CAL_2V_NULL</span>          <span class="o">=</span> <span class="mi">84</span>
+    <span class="n">EXT_CAL_02V_NULL</span>         <span class="o">=</span> <span class="mi">85</span>
+    <span class="n">CAL_N1_N2_RATIO</span>          <span class="o">=</span> <span class="mi">96</span>
+    <span class="n">SELF_TEST_MAIN_CPU</span>       <span class="o">=</span> <span class="mi">112</span>
+    <span class="n">SELF_TEST_FRONTPANEL_CPU</span> <span class="o">=</span> <span class="mi">113</span>
+    <span class="n">SELF_TEST_GUARD_CPU</span>      <span class="o">=</span> <span class="mi">114</span>
+    <span class="n">SELF_TEST_LOW_VOLTAGE</span>    <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">SELF_TEST_HIGH_VOLTAGE</span>   <span class="o">=</span> <span class="mi">129</span>
+    <span class="n">SELF_TEST_OVEN</span>           <span class="o">=</span> <span class="mi">130</span>
+    <span class="n">PRINTING</span>                 <span class="o">=</span> <span class="mi">208</span>
+    <span class="n">WRITING_TO_NVRAM</span>         <span class="o">=</span> <span class="mi">224</span>
+    <span class="n">RESETTING</span>                <span class="o">=</span> <span class="mi">240</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="flags">
+<h4>Flags<a class="headerlink" href="#flags" title="Permalink to this heading">¶</a></h4>
+<section id="serialpollflags">
+<h5>SerialPollFlags<a class="headerlink" href="#serialpollflags" title="Permalink to this heading">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SerialPollFlags</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+    <span class="n">NONE</span>               <span class="o">=</span> <span class="mb">0b0</span>
+    <span class="n">DOING_STATE_CHANGE</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span>
+    <span class="n">MSG_RDY</span>            <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span>
+    <span class="n">OUTPUT_SETTLED</span>     <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span>
+    <span class="n">ERROR_CONDITION</span>    <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span>
+    <span class="n">SRQ</span>                <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span>
+</pre></div>
+</div>
+</section>
+<section id="srqmask">
+<h5>SrqMask<a class="headerlink" href="#srqmask" title="Permalink to this heading">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SrqMask</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+    <span class="n">NONE</span>                <span class="o">=</span> <span class="mb">0b0</span>
+    <span class="n">DOING_STATE_CHANGE</span>  <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span>
+    <span class="n">MSG_RDY</span>             <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span>
+    <span class="n">OUTPUT_SETTLED</span>      <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span>
+    <span class="n">ERROR_CONDITION</span>     <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span>
+</pre></div>
+</div>
+</section>
+<section id="statusflags">
+<h5>StatusFlags<a class="headerlink" href="#statusflags" title="Permalink to this heading">¶</a></h5>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">StatusFlags</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+    <span class="n">VOLTAGE_MODE</span>           <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span>
+    <span class="n">CURRENT_BOOST_MODE</span>     <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+    <span class="n">VOLTAGE_BOOST_MODE</span>     <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span>
+    <span class="n">DIVIDER_ENABLED</span>        <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span>
+    <span class="n">INTERNAL_SENSE_ENABLED</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span>
+    <span class="n">OUTPUT_ENABLED</span>         <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">5</span>
+    <span class="n">INTERNAL_GUARD_ENABLED</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span>
+    <span class="n">REAR_OUTPUT_ENABLED</span>    <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">7</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="versioning">
+<h3>Versioning<a class="headerlink" href="#versioning" title="Permalink to this heading">¶</a></h3>
+<p>I use <a class="reference external" href="http://semver.org/">SemVer</a> for versioning. For the versions available, see the <a class="reference external" href="https://github.com/PatrickBaus/pyAsyncPrologix/tags">tags on this repository</a>.</p>
+</section>
+<section id="authors">
+<h3>Authors<a class="headerlink" href="#authors" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Patrick Baus</strong> - <em>Initial work</em> - <a class="reference external" href="https://github.com/PatrickBaus">PatrickBaus</a></p></li>
+</ul>
+</section>
+<section id="license">
+<h3>License<a class="headerlink" href="#license" title="Permalink to this heading">¶</a></h3>
+<p>This project is licensed under the GPL v3 license - see the <a href="#id3"><span class="problematic" id="id4">LICENSE</span></a> file for details</p>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Readme</a><ul>
+<li><a class="reference internal" href="#fluke5440b-async">fluke5440b-async</a><ul>
+<li><a class="reference internal" href="#supported-gpib-hardware">Supported GPIB Hardware</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#setup">Setup</a><ul>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+<li><a class="reference internal" href="#methods">Methods</a></li>
+<li><a class="reference internal" href="#enums">Enums</a><ul>
+<li><a class="reference internal" href="#errorcode">ErrorCode</a></li>
+<li><a class="reference internal" href="#modetype">ModeType</a></li>
+<li><a class="reference internal" href="#terminatortype">TerminatorType</a></li>
+<li><a class="reference internal" href="#separatortype">SeparatorType</a></li>
+<li><a class="reference internal" href="#state">State</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#flags">Flags</a><ul>
+<li><a class="reference internal" href="#serialpollflags">SerialPollFlags</a></li>
+<li><a class="reference internal" href="#srqmask">SrqMask</a></li>
+<li><a class="reference internal" href="#statusflags">StatusFlags</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#versioning">Versioning</a></li>
+<li><a class="reference internal" href="#authors">Authors</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">Home</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="modules.html"
+                          title="next chapter">Module Documentation</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/readme.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="Module Documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Home"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluke5440b_async v0.9.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Readme</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2023, Patrick Baus.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.0.
+    </div>
+  </body>
+</html>
