@@ -49,6 +49,7 @@ test = [
 
 [tool.pylint.'MESSAGES CONTROL']
 max-line-length = 120
+notes = ["FIXME", "XXX",]
 
 [tool.isort]
 line_length = 120
