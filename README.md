@@ -1,5 +1,12 @@
+[![pylint](https://github.com/PatrickBaus/pyAsyncFluke5440B/actions/workflows/pylint.yml/badge.svg)](https://github.com/PatrickBaus/pyAsyncHP3478A/actions/workflows/pylint.yml)
+[![PyPI](https://img.shields.io/pypi/v/fluke5440b_async)](https://pypi.org/project/fluke5440b_async/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fluke5440b_async)
+![PyPI - Status](https://img.shields.io/pypi/status/fluke5440b_async)
+[![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 # pyAsyncFluke5440B
 Python3 AsyncIO Fluke 5440B driver. This library requires Python [asyncio](https://docs.python.org/3/library/asyncio.html) and AsyncIO library for the GPIB adapter.
+
+The library is fully type-hinted.
 
 > :warning: The following features are not supported (yet):
 > - External calibration: I do not have the means to test this. If you want to help, open a ticket and we can get this done
@@ -12,18 +19,20 @@ Python3 AsyncIO Fluke 5440B driver. This library requires Python [asyncio](https
 |[AsyncIO Prologix GPIB library](https://github.com/PatrickBaus/pyAsyncPrologixGpib)|:heavy_check_mark:|:heavy_check_mark:|  |
 |[AsyncIO linux-gpib wrapper](https://github.com/PatrickBaus/pyAsyncGpib)|:heavy_check_mark:|:heavy_check_mark:|  |
 
-Tested using Linux, should work for Mac OSX, Windows and any OS with Python support.
+Tested using Linux, but should work on Mac OSX, Windows or any OS with Python support.
 
-## Setup
-
-There are currently no packages available. To install the library, clone the repository into your project folder and install the required packages. This setup assumes, that linux-gpib was downloded to
-[~/linux-gpib-code/].
-
+# Setup
+To install the library in a virtual environment (always use venvs with every project):
 ```bash
 python3 -m venv env  # virtual environment, optional
-source env/bin/activate
-pip install -r requirements.txt
-# pip install -e ~/linux-gpib-code/linux-gpib-user/language/python/
+source env/bin/activate  # only if the virtual environment is used
+pip install fluke5440b-async
+```
+
+All examples assume that a GPIB library is installed as well. Either run
+```bash
+pip install prologix-gpib-async    # or alternatively
+# pip install async-gpib
 ```
 
 ## Usage
@@ -31,13 +40,24 @@ pip install -r requirements.txt
 > *Got error during waiting: ErrorCode.GPIB_HANDSHAKE_ERROR. If you are using a Prologix adapter, this can be safely ignored at this point.*
 > These are harmless and can be ignored.
 
-All examples assume, that the GPIB library is copied to the same root folder as the library. Either run
-```bash
-git clone https://github.com/PatrickBaus/pyAsyncPrologixGpib    # or alternativeliy
-# git clone https://github.com/PatrickBaus/pyAsyncGpib
+The library uses an asynchronous context manager to make cleanup easier. You can use either the
+context manager syntax or invoke the calls manually:
 
+```python
+async with Fluke_5440B(connection=gpib_device) as fluke5440b:
+    # Add your code here
+    ...
 ```
-or download the source code from the git repository and copy it yourself.
+
+```python
+try:
+    fluke5440b = Fluke_5440B(connection=gpib_device)
+    await fluke5440b.connect()
+    # your code
+finally:
+    await fluke5440b.disconnect()
+```
+
 
 A simple example for setting the output voltage.
 ```python
@@ -45,12 +65,11 @@ from pyAsyncFluke5440B.Fluke_5440B import Fluke_5440B
 
 from pyAsyncGpib.pyAsyncGpib.AsyncGpib import AsyncGpib
 
-# The default GPIB address is 7.
-fluke5440b = Fluke_5440B(connection=AsyncGpib(name=0, pad=7))
 
 # This example will print voltage data to the console
 async def main():
-    try: 
+   # The default GPIB address is 7.
+   async with Fluke_5440B(connection=AsyncGpib(name=0, pad=7)) as fluke5440b:
         # No need to explicitely bring up the GPIB connection. This will be done by the instrument.
         await fluke5440b.connect()
         await fluke5440b.set_output(10.0)
@@ -58,11 +77,6 @@ async def main():
 
     except asyncio.TimeoutError:
         logging.getLogger(__name__).error('Timeout. Error: %s', await fluke5440b.get_error())
-    finally:
-        # Disconnect from the instrument. We may safely call diconnect() on a non-connected device, even
-        # in case of a connection error
-        await fluke5440b.disconnect()
-
 try:
     asyncio.run(main(), debug=True)
 except KeyboardInterrupt:
@@ -76,7 +90,7 @@ See [examples/](examples/) for more working examples.
 ```python
    async def get_id()
 ```
-This function returns returns the instrument name and the software version string.
+This function returns the instrument name and the software version string.
 
 ```python
    async def connect()
@@ -131,7 +145,7 @@ Place the instrument in standby, enable voltage mode, set the output voltage to 
 ```python
    async def local()
 ```
-Enable the front panel buttons, if they the instrument is in local lock out.
+Enable the front panel buttons, if the instrument is in local lock out.
 
 ```python
    async def get_terminator()
@@ -144,7 +158,7 @@ ___Returns___
 ```python
    async def get_separator()
 ```
-Returns the separator used by the instrument to separate multiple queries .
+Returns the separator used by the instrument to separate multiple queries.
 
 ___Returns___
 * [[SeparatorType](#separatortype)] : The type of terminator used.
@@ -195,7 +209,7 @@ ___Raises___
 ```python
    async def set_internal_sense(enabled)
 ```
-If the load resistance is greater than 1 MΩ, 2-wire calibration can be used. Otherwise cable resistance will reduce accuracy. Use internal sense for 2-wire calibrations. See page 2-13 of the operator manual for details.
+If the load resistance is greater than 1 MΩ, 2-wire calibration can be used. Otherwise cable the resistance will reduce the accuracy. Use internal sense for 2-wire calibrations. See page 2-13 of the operator manual for details.
 
 ___Arguments___
 * `enabled` [bool] : If set, the voltage sense input internally connected to the output binding posts.
@@ -203,7 +217,7 @@ ___Arguments___
 ```python
    async def set_internal_guard(enabled)
 ```
-If set, the guard is internally connected to the output LO terminal. Use this if the device being calibrated has floating inputs. If calibrating devices with grounded inputs, connect the guard terminal to the input LO of the device and disable the internal guard. See page 2-14 of the operator manual for details.
+If set, the guard is internally connected to the output LO terminal. Use this, if the device being calibrated has floating inputs. If calibrating devices with grounded inputs, connect the guard terminal to the input LO of the device and disable the internal guard. See page 2-14 of the operator manual for details.
 
 ___Arguments___
 * `enabled` [bool] : Set to enable the internal guard or unset to float the internal guard.
@@ -211,7 +225,7 @@ ___Arguments___
 ```python
    async def set_divider(enabled)
 ```
-Enable the internal dividet to reduce the output noise and increase the resolution. Do not enable the external sense connection via `set_internal_sense(False)` as this will decrease the accuracy. The divider has an output impedance of 450 Ω. The load should ideally be greater than 1 GΩ to keep the loading error below 1 ppm. See page 3-10 of the operator manual for details. 
+Enable the internal divider to reduce the output noise and increase the resolution. Do not enable the external sense connection via `set_internal_sense(False)` as this will decrease the accuracy. The divider has an output impedance of 450 Ω. The load should ideally be greater than 1 GΩ to keep the loading error below 1 ppm. See page 3-10 of the operator manual for details.
 
 ___Arguments___
 * `enabled` [bool] : Set to enable the divided output.
@@ -392,11 +406,11 @@ class ErrorCode(Enum):
     TERMINATOR_ERROR                  = 153
     SEPARATOR_ERROR                   = 154
     UNKNOWN_COMMAND                   = 155
-    INVALID_PARAMTER                  = 156
+    INVALID_PARAMETER                 = 156
     BUFFER_OVERFLOW                   = 157
     INVALID_CHARACTER                 = 158
     RS232_ERROR                       = 160
-    PARAMTER_OUT_OF_RANGE             = 168
+    PARAMETER_OUT_OF_RANGE            = 168
     OUTPUT_OUTSIDE_LIMITS             = 169
     LIMIT_OUT_OF_RANGE                = 170
     DIVIDER_OUT_OF_RANGE              = 171
@@ -521,4 +535,3 @@ I use [SemVer](http://semver.org/) for versioning. For the versions available, s
 
 
 This project is licensed under the GPL v3 license - see the [LICENSE](LICENSE) file for details
-

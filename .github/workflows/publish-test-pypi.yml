@@ -1,0 +1,40 @@
+name: Upload to test.pypi.org
+
+on:
+  # Triggers the workflow on push to the master branch
+  push:
+    branches: [ "master" ]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [ "3.10" ]
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v3
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install and update pip and the build dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install .[dev]
+      - name: Build and upload to PyPI
+        continue-on-error: true
+        run: |
+          python3 -m build
+          python3 -m twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TWINE_TEST_TOKEN }}
+          TWINE_REPOSITORY: testpypi
