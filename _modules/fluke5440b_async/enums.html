@@ -66,6 +66,95 @@
     <span class="n">INVALID_COMMAND</span> <span class="o">=</span> <span class="mi">175</span></div>
 
 
+<div class="viewcode-block" id="SelfTestErrorCode"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.SelfTestErrorCode">[docs]</a><span class="k">class</span> <span class="nc">SelfTestErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The error codes thrown by the self-test routine. See page 4-8 of the service manual for details.&quot;&quot;&quot;</span>
+
+    <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">POWER_SUPPLY_FAULT_TEST_UNGUARDED_POWER</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">POWER_SUPPLY_FAULT_CHECK_GUARDED_POWER</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">MAIN_CONTROL_FAULT_CHECK_MAIN_CONTROLLER</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">MAIN_CONTROL_FAULT_CHECK_MAIN_MEMORY</span> <span class="o">=</span> <span class="mi">17</span>
+    <span class="n">MAIN_CONTROL_FAULT_CHECK_MAIN_NV_MEMORY</span> <span class="o">=</span> <span class="mi">18</span>
+    <span class="n">MAIN_INTERRUPT_FAULT_CHECK_SERIAL_OUTPUT_TIMER</span> <span class="o">=</span> <span class="mi">24</span>
+    <span class="n">MAIN_INTERRUPT_FAULT_CHECK_NVMEMORY_TIMER</span> <span class="o">=</span> <span class="mi">25</span>
+    <span class="n">MAIN_INTERRUPT_FAULT_CHECK_SERIAL_INPUT</span> <span class="o">=</span> <span class="mi">26</span>
+    <span class="n">MAIN_INTERRUPT_FAULT_CHECK_INPUT_FR_FRONT</span> <span class="o">=</span> <span class="mi">27</span>
+    <span class="n">MAIN_INTERRUPT_FAULT_CHECK_MAIN_CLOCK</span> <span class="o">=</span> <span class="mi">28</span>
+    <span class="n">MAIN_INTERRUPT_FAULT_CHECK_REMOTE_INPUT</span> <span class="o">=</span> <span class="mi">29</span>
+    <span class="n">MAIN_INTERRUPT_FAULT_CHECK_INPUT_FR_GUARD</span> <span class="o">=</span> <span class="mi">30</span>
+    <span class="n">FRONT_DIGITAL_FAULT_MEMORY</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">FRONT_DIGITAL_FAULT_PROCESSOR</span> <span class="o">=</span> <span class="mi">33</span>
+    <span class="n">INSIDE_GUARD_FAULT_CHECK_GUARD_MEMORY</span> <span class="o">=</span> <span class="mi">40</span>
+    <span class="n">INSIDE_GUARD_FAULT_CHECK_DATA_BUS</span> <span class="o">=</span> <span class="mi">41</span>
+    <span class="n">INSIDE_GUARD_FAULT_CHECK_ADDRESS_BUS</span> <span class="o">=</span> <span class="mi">42</span>
+    <span class="n">INSIDE_GUARD_FAULT_CHECK_GUARD_CONTROL_BUS</span> <span class="o">=</span> <span class="mi">43</span>
+    <span class="n">BOARD_ACK_FAULT_CHECK_DAC_BOARD</span> <span class="o">=</span> <span class="mi">48</span>
+    <span class="n">BOARD_ACK_FAULT_CHECK_PREAMP_BOARD</span> <span class="o">=</span> <span class="mi">49</span>
+    <span class="n">BOARD_ACK_FAULT_CHECK_SAMPLE_BOARD</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">BOARD_ACK_FAULT_CHECK_OUTPUT_BOARD</span> <span class="o">=</span> <span class="mi">51</span>
+    <span class="n">GUARD_COMMUNICATION_FAULT_CHECK_GARBLED_DATA</span> <span class="o">=</span> <span class="mi">56</span>
+    <span class="n">GUARD_COMMUNICATION_FAULT_GUARD_NOT_ANSWERING</span> <span class="o">=</span> <span class="mi">57</span>
+    <span class="n">FRONT_COMMUNICATION_FAULT</span> <span class="o">=</span> <span class="mi">64</span>
+    <span class="n">ANALOG_MEASURE_FAULT_CHECK_ANALOG_BUSS</span> <span class="o">=</span> <span class="mi">72</span>
+    <span class="n">ANALOG_MEASURE_FAULT_CHECK_ZERO_AMP</span> <span class="o">=</span> <span class="mi">73</span>
+    <span class="n">ANALOG_MEASURE_FAULT_UNABLE_TO_ZERO_RANGE</span> <span class="o">=</span> <span class="mi">74</span>
+    <span class="n">ANALOG_MEASURE_FAULT_GAIN_SHIFT_TOO_LARGE</span> <span class="o">=</span> <span class="mi">75</span>
+    <span class="n">DAC_DIGITAL_FAULT_CHECK_A_TO_D</span> <span class="o">=</span> <span class="mi">80</span>
+    <span class="n">DAC_DIGITAL_FAULT_CHECK_FIRST_SWITCH</span> <span class="o">=</span> <span class="mi">81</span>
+    <span class="n">DAC_DIGITAL_FAULT_SECOND_SWITCH</span> <span class="o">=</span> <span class="mi">82</span>
+    <span class="n">DAC_DIGITAL_FAULT_BIAS_SIGNAL</span> <span class="o">=</span> <span class="mi">83</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_0V_OUTPUT</span> <span class="o">=</span> <span class="mi">87</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_REFERENCE</span> <span class="o">=</span> <span class="mi">88</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_NEG_5V_REGULATOR</span> <span class="o">=</span> <span class="mi">89</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_10V_OUTPUT</span> <span class="o">=</span> <span class="mi">90</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_NEG_10V_OUTPUT</span> <span class="o">=</span> <span class="mi">91</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_DAC_FILTER</span> <span class="o">=</span> <span class="mi">92</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_5V_DAC_CKT</span> <span class="o">=</span> <span class="mi">93</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_SECOND_SPEED</span> <span class="o">=</span> <span class="mi">94</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_DAC_OVEN</span> <span class="o">=</span> <span class="mi">95</span>
+    <span class="n">DAC_ANALOG_FAULT_CHECK_5V_DAC_REC</span> <span class="o">=</span> <span class="mi">96</span>
+    <span class="n">GRD_PWR_SUPPLY_FAULT_CHECK_20V_OVEN</span> <span class="o">=</span> <span class="mi">97</span>
+    <span class="n">PREAMP_ANALOG_FAULT_CHECK_INTCAL_CONFIG</span> <span class="o">=</span> <span class="mi">104</span>
+    <span class="n">PREAMP_OUT_BRDS_FAULT_CHECK_STANDBY_CONFIG</span> <span class="o">=</span> <span class="mi">109</span>
+    <span class="n">PREAMP_ANALOG_FAULT_CHECK_PREAMP_OVEN</span> <span class="o">=</span> <span class="mi">110</span>
+    <span class="n">OUTPUT_BOARDS_FAULT_CHECK_ZERO_AMP</span> <span class="o">=</span> <span class="mi">112</span>
+    <span class="n">OUTPUT_BOARDS_FAULT_CHECK_2V_RANGE</span> <span class="o">=</span> <span class="mi">113</span>
+    <span class="n">OUTPUT_BOARDS_FAULT_CHECK_CURR_LIM_CKT</span> <span class="o">=</span> <span class="mi">114</span>
+    <span class="n">OUTPUT_BOARDS_FAULT_CHECK_02V_RANGE</span> <span class="o">=</span> <span class="mi">115</span>
+    <span class="n">PREAMP_OUT_BRDS_FAULT_CHECK_250V_RANGE</span> <span class="o">=</span> <span class="mi">116</span>
+    <span class="n">SAMPLE_STRING_FAULT_CHECK_10V_INTCAL</span> <span class="o">=</span> <span class="mi">120</span>
+    <span class="n">SAMPLE_STRING_FAULT_CHECK_20V_INTCAL</span> <span class="o">=</span> <span class="mi">121</span>
+    <span class="n">SAMPLE_STRING_FAULT_CHECK_1KV_RANGE</span> <span class="o">=</span> <span class="mi">122</span>
+    <span class="n">PREAMP_SAMPLE_STRING_FAULT_CHECK_HIGH_V_INTCAL</span> <span class="o">=</span> <span class="mi">123</span>
+    <span class="n">FIL_BOUT_BRDS_FAULT_CHECK_NEG_275V_RANGE</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">FIL_BOUT_BRDS_FAULT_CHECK_275V_RANGE</span> <span class="o">=</span> <span class="mi">129</span>
+    <span class="n">FIL_BOUT_BRDS_FAULT_CHECK_550V_RANGE</span> <span class="o">=</span> <span class="mi">130</span>
+    <span class="n">FIL_BOUT_BRDS_FAULT_CHECK_875V_RANGE</span> <span class="o">=</span> <span class="mi">131</span>
+    <span class="n">FIL_BOUT_BRDS_FAULT_CHECK_1100V_RANGE</span> <span class="o">=</span> <span class="mi">132</span>
+    <span class="n">OUTPUT_LIMIT_FAULT</span> <span class="o">=</span> <span class="mi">136</span>
+    <span class="n">OUTPUT_LIMIT_FAULT_OUTPUT_OVER_VOLTAGE</span> <span class="o">=</span> <span class="mi">137</span>
+    <span class="n">OUTPUT_LIMIT_FAULT_OUTPUT_UNDER_VOLTAGE</span> <span class="o">=</span> <span class="mi">138</span>
+    <span class="n">BOOST_INTERFACE_ERROR_CHECK_REAR_CONNECTOR</span> <span class="o">=</span> <span class="mi">144</span>
+    <span class="n">BOOST_INTERFACE_ERROR_CHECK_MISSING_REAR_CABLE</span> <span class="o">=</span> <span class="mi">145</span>
+    <span class="n">BOOST_INTERFACE_ERROR_VOLTAGE_TRIP</span> <span class="o">=</span> <span class="mi">146</span>
+    <span class="n">BOOST_INTERFACE_ERROR_CURRENT_TRIP</span> <span class="o">=</span> <span class="mi">147</span>
+    <span class="n">IEEE488_REMOTE_ERROR_SOURCE_HANDSHAKE</span> <span class="o">=</span> <span class="mi">152</span>
+    <span class="n">IEEE488_REMOTE_ERROR_EXPECTING_TERMINATOR</span> <span class="o">=</span> <span class="mi">153</span>
+    <span class="n">IEEE488_REMOTE_ERROR_EXPECTING_SEPARATOR</span> <span class="o">=</span> <span class="mi">154</span>
+    <span class="n">IEEE488_REMOTE_ERROR_EXPECTING_HEADER</span> <span class="o">=</span> <span class="mi">155</span>
+    <span class="n">IEEE488_REMOTE_ERROR_EXPECTING_NUMBER</span> <span class="o">=</span> <span class="mi">156</span>
+    <span class="n">IEEE488_REMOTE_ERROR_EXPECTING_BUFFER_OVERFLOW</span> <span class="o">=</span> <span class="mi">157</span>
+    <span class="n">IEEE488_REMOTE_ERROR_EXPECTING_BAD_CHARACTER</span> <span class="o">=</span> <span class="mi">158</span>
+    <span class="n">RS232C_SERIAL_ERROR</span> <span class="o">=</span> <span class="mi">160</span>
+    <span class="n">USER_ENTRY_ERROR_NUMBER_OUT_OF_RANGE</span> <span class="o">=</span> <span class="mi">168</span>
+    <span class="n">USER_ENTRY_ERROR_OUTPUT_OUT_OF_RANGE</span> <span class="o">=</span> <span class="mi">169</span>
+    <span class="n">USER_ENTRY_ERROR_LIMITS_OUT_OF_RANGE</span> <span class="o">=</span> <span class="mi">170</span>
+    <span class="n">USER_ENTRY_ERROR_DIVIDER_OUT_OF_RANGE</span> <span class="o">=</span> <span class="mi">171</span>
+    <span class="n">USER_ENTRY_ERROR_IN_OUTPUT_TERMINAL_SENSE</span> <span class="o">=</span> <span class="mi">172</span>
+    <span class="n">USER_ENTRY_ERROR_IN_OUTPUT_TERMINAL_GUARD</span> <span class="o">=</span> <span class="mi">173</span>
+    <span class="n">CAL_SWITCH_LOCKED</span> <span class="o">=</span> <span class="mi">174</span>
+    <span class="n">USER_ENTRY_ERROR_INSTRUMENT_IS_BUSY</span> <span class="o">=</span> <span class="mi">175</span></div>
+
 <div class="viewcode-block" id="ModeType"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.ModeType">[docs]</a><span class="k">class</span> <span class="nc">ModeType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The output modes. Voltage boost means a connected Fluke 5205A power amplifier and current boost means a connected</span>
 <span class="sd">    Fluke 5220A transconductance amplifier.&quot;&quot;&quot;</span>
