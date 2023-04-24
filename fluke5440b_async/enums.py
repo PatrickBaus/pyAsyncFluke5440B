@@ -118,6 +118,7 @@ class SelfTestErrorCode(Enum):
     CAL_SWITCH_LOCKED = 174
     USER_ENTRY_ERROR_INSTRUMENT_IS_BUSY = 175
 
+
 class ModeType(Enum):
     """The output modes. Voltage boost means a connected Fluke 5205A power amplifier and current boost means a connected
     Fluke 5220A transconductance amplifier."""

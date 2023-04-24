@@ -179,6 +179,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
             if status & SerialPollFlags.ERROR_CONDITION:
                 err = await self.get_error()  # clear error flags not produced by us
+                error: ErrorCode | SelfTestErrorCode
                 try:
                     error = ErrorCode(err)
                 except ValueError:
@@ -765,7 +766,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
         spoll = await self.serial_poll()  # Clear the SRQ bit
         if spoll & SerialPollFlags.ERROR_CONDITION and raise_error:
-            self.__logger.debug("Received error while waiting for device to request service. Serial poll register: %s.", spoll)
+            self.__logger.debug(
+                "Received error while waiting for device to request service. Serial poll register: %s.", spoll
+            )
             # If there was an error during waiting, raise it.
             # I have seen GPIB_HANDSHAKE_ERRORs with a prologix adapter, which does a lot of polling during wait.
             # Ignore that error for now.
