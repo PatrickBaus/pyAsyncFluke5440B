@@ -43,11 +43,11 @@ if "prologix_gpib_async" in sys.modules:
     # Set the timeout to 300 seconds, State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
     # pylint: disable=used-before-assignment  # false positive
     gpib_device = AsyncPrologixGpibEthernetController(
-        IP_ADDRESS, pad=7, timeout=300 * 1000, wait_delay=250
+        IP_ADDRESS, pad=7, timeout=300, wait_delay=0.25
     )  # Prologix GPIB Adapter
 elif "async_gpib" in sys.modules:
-    # Set the timeout to 300 seconds (T300s=16), State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
-    gpib_device = AsyncGpib(name=0, pad=7, timeout=16)  # NI GPIB adapter, pylint: disable=used-before-assignment
+    # Set the timeout to 300 seconds, State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
+    gpib_device = AsyncGpib(name=0, pad=7, timeout=300)  # NI GPIB adapter, pylint: disable=used-before-assignment
     from gpib_ctypes.Gpib import Gpib
 
     gpib_board = Gpib(name=0)
@@ -57,7 +57,6 @@ else:
     raise ModuleNotFoundError("No GPIB library loaded.")
 
 
-# This example will set the output of the calibrator
 async def main():
     """Set the output voltage and enable the outputs."""
     # No need to explicitly bring up the GPIB connection. This will be done by the instrument.

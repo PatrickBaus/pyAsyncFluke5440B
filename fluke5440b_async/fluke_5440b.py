@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import dataclass
 from decimal import Decimal
 from types import TracebackType
 from typing import TYPE_CHECKING, Type, cast
@@ -40,6 +41,58 @@ if TYPE_CHECKING:
     from prologix_gpib_async import AsyncPrologixGpibController
 
 BAUD_RATES_AVAILABLE = (50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600)
+
+
+@dataclass
+class CalibrationConstants:  # pylint: disable=too-many-instance-attributes
+    """The calibration constants of the Fluke 5440B."""
+
+    # capital V due to SI pylint: disable=invalid-name
+    gain_02V: Decimal
+    gain_2V: Decimal
+    gain_10V: Decimal
+    gain_20V: Decimal
+    gain_250V: Decimal
+    gain_1000V: Decimal
+    offset_10V_pos: Decimal
+    offset_20V_pos: Decimal
+    offset_250V_pos: Decimal
+    offset_1000V_pos: Decimal
+    offset_10V_neg: Decimal
+    offset_20V_neg: Decimal
+    offset_250V_neg: Decimal
+    offset_1000V_neg: Decimal
+    gain_shift_10V: Decimal
+    gain_shift_20V: Decimal
+    gain_shift_250V: Decimal
+    gain_shift_1000V: Decimal
+    resolution_ratio: Decimal
+    adc_gain: Decimal
+
+    def __str__(self) -> str:
+        """Pretty-print the calibration constants."""
+        return (
+            f"Gain 0.2 V      : {self.gain_02V*10**3:.8f} mV\n"
+            f"Gain 2 V        : {self.gain_2V*10**3:.8f} mV\n"
+            f"Gain 10 V       : {self.gain_10V*10**3:.8f} mV\n"
+            f"Shift 10 V      : {self.gain_shift_10V} µV/V\n"
+            f"Gain 20 V       : {self.gain_20V*10**3:.8f} mV\n"
+            f"Shift 20 V      : {self.gain_shift_20V} µV/V\n"
+            f"Gain 250 V      : {self.gain_250V*10**3:.8f} mV\n"
+            f"Shift 250 V     : {self.gain_shift_250V} µV/V\n"
+            f"Gain 1000 V     : {self.gain_1000V*10**3:.8f} mV\n"
+            f"Shift 1000 V    : {self.gain_shift_1000V} µV/V\n"
+            f"Offset +10 V    : {self.offset_10V_pos*10**3:.8f} mV\n"
+            f"Offset -10 V    : {self.offset_10V_neg*10**3:.8f} mV\n"
+            f"Offset +20 V    : {self.offset_20V_pos*10**3:.8f} mV\n"
+            f"Offset -20 V    : {self.offset_20V_neg*10**3:.8f} mV\n"
+            f"Offset +250 V   : {self.offset_250V_pos*10**3:.8f} mV\n"
+            f"Offset -250 V   : {self.offset_250V_neg*10**3:.8f} mV\n"
+            f"Offset +1000 V  : {self.offset_10V_pos*100000:.8f} mV\n"
+            f"Offset -1000 V  : {self.offset_10V_neg*100000:.8f} mV\n"
+            f"Resolution ratio: {self.resolution_ratio}\n"
+            f"ADC gain        : {self.adc_gain*10**3:.8f} mV"
+        )
 
 
 class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,too-many-lines
@@ -411,7 +464,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
     async def set_output(self, value: int | float | Decimal, test_error: bool = True) -> None:
         """
         Set the output of the calibrator. If an output greater than ±22 V is set, the calibrator will automatically go
-        to STBY for safety reasons. Call `set_output_enabled(True)` to reenable the output.
+        to STBY for safety reasons. Call `set_output_enabled(True)` to re-enable the output.
         Parameters
         ----------
         value: int or float or Decimal
@@ -915,14 +968,14 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             finally:
                 await self.set_srq_mask(SrqMask.NONE)  # Disable SRQs
 
-    async def get_calibration_constants(self) -> dict[str, Decimal]:
+    async def get_calibration_constants(self) -> CalibrationConstants:
         """
         Query the calibration constants and gain shifts with respect to the previous internal calibration. See page 3-18
         of the operator manual for details.
         Returns
         -------
-        dict:
-            A dictionary containing Decimals for each value
+        CalibrationConstants:
+            A dataclass containing the constants as Decimals
         """
         assert self.__lock is not None
         async with self.__lock:
@@ -931,28 +984,28 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             values += cast(
                 list[str], await self.query(",".join(["GCAL " + str(i) for i in range(10, 20)]), test_error=True)
             )
-            return {
-                "gain_0.2V": Decimal(values[5]),
-                "gain_2V": Decimal(values[4]),
-                "gain_10V": Decimal(values[0]),
-                "gain_20V": Decimal(values[1]),
-                "gain_250V": Decimal(values[2]),
-                "gain_1000V": Decimal(values[3]),
-                "offset_10V_pos": Decimal(values[6]),
-                "offset_20V_pos": Decimal(values[7]),
-                "offset_250V_pos": Decimal(values[8]),
-                "offset_1000V_pos": Decimal(values[9]),
-                "offset_10V_neg": Decimal(values[10]),
-                "offset_20V_neg": Decimal(values[11]),
-                "offset_250V_neg": Decimal(values[12]),
-                "offset_1000V_neg": Decimal(values[13]),
-                "gain_shift_10V": Decimal(values[14]),
-                "gain_shift_20V": Decimal(values[15]),
-                "gain_shift_250V": Decimal(values[16]),
-                "gain_shift_1000V": Decimal(values[17]),
-                "resolution_ratio": Decimal(values[18]),
-                "adc_gain": Decimal(values[19]),
-            }
+            return CalibrationConstants(
+                gain_02V=Decimal(values[5]),
+                gain_2V=Decimal(values[4]),
+                gain_10V=Decimal(values[0]),
+                gain_20V=Decimal(values[1]),
+                gain_250V=Decimal(values[2]),
+                gain_1000V=Decimal(values[3]),
+                offset_10V_pos=Decimal(values[6]),
+                offset_20V_pos=Decimal(values[7]),
+                offset_250V_pos=Decimal(values[8]),
+                offset_1000V_pos=Decimal(values[9]),
+                offset_10V_neg=Decimal(values[10]),
+                offset_20V_neg=Decimal(values[11]),
+                offset_250V_neg=Decimal(values[12]),
+                offset_1000V_neg=Decimal(values[13]),
+                gain_shift_10V=Decimal(values[14]),
+                gain_shift_20V=Decimal(values[15]),
+                gain_shift_250V=Decimal(values[16]),
+                gain_shift_1000V=Decimal(values[17]),
+                resolution_ratio=Decimal(values[18]),
+                adc_gain=Decimal(values[19]),
+            )
 
     async def get_rs232_baud_rate(self) -> int | float:
         """

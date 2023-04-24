@@ -3,7 +3,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fluke5440b_async)
 ![PyPI - Status](https://img.shields.io/pypi/status/fluke5440b_async)
 [![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-# pyAsyncFluke5440B
+# fluke5440b-async
 Python3 AsyncIO Fluke 5440B driver. This library requires Python [asyncio](https://docs.python.org/3/library/asyncio.html) and AsyncIO library for the GPIB adapter.
 
 The library is fully type-hinted.

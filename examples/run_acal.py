@@ -44,11 +44,11 @@ if "prologix_gpib_async" in sys.modules:
     # Set the timeout to 300 seconds, State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
     # pylint: disable=used-before-assignment  # false positive
     gpib_device = AsyncPrologixGpibEthernetController(
-        IP_ADDRESS, pad=7, timeout=300 * 1000, wait_delay=250
+        IP_ADDRESS, pad=7, timeout=300, wait_delay=0.25
     )  # Prologix GPIB Adapter
 elif "async_gpib" in sys.modules:
-    # Set the timeout to 300 seconds (T300s=16), State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
-    gpib_device = AsyncGpib(name=0, pad=7, timeout=16)  # NI GPIB adapter, pylint: disable=used-before-assignment
+    # Set the timeout to 300 seconds State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
+    gpib_device = AsyncGpib(name=0, pad=7, timeout=300)  # NI GPIB adapter, pylint: disable=used-before-assignment
     from gpib_ctypes.Gpib import Gpib
 
     gpib_board = Gpib(name=0)
@@ -58,7 +58,6 @@ else:
     raise ModuleNotFoundError("No GPIB library loaded.")
 
 
-# This example will run the internal calibration routine of the calibrator
 async def main():
     """Print the calibration constants, then run ACAL, then print the new constants."""
     # No need to explicitly bring up the GPIB connection. This will be done by the instrument.
@@ -68,58 +67,10 @@ async def main():
         await fluke5440b.selftest_all()
         print("Self-test done.")
         cal_constants = await fluke5440b.get_calibration_constants()
-        print(
-            (
-                "Calibration constants before running autocalibration:\n"
-                f"Gain 0.2 V      : {cal_constants['gain_0.2V']*1000:.8f} mV\n"
-                f"Gain 2 V        : {cal_constants['gain_2V']*1000:.8f} mV\n"
-                f"Gain 10 V       : {cal_constants['gain_10V']*1000:.8f} mV\n"
-                f"Shift 10 V      : {cal_constants['gain_shift_10V']} ppm\n"
-                f"Gain 20 V       : {cal_constants['gain_20V']*1000:.8f} mV\n"
-                f"Shift 20 V      : {cal_constants['gain_shift_20V']} ppm\n"
-                f"Gain 250 V      : {cal_constants['gain_250V']*1000:.8f} mV\n"
-                f"Shift 250 V     : {cal_constants['gain_shift_250V']} ppm\n"
-                f"Gain 1000 V     : {cal_constants['gain_1000V']*1000:.8f} mV\n"
-                f"Shift 1000 V    : {cal_constants['gain_shift_1000V']} ppm\n"
-                f"Offset +10 V    : {cal_constants['offset_10V_pos']*1000:.8f} mV\n"
-                f"Offset -10 V    : {cal_constants['offset_10V_neg']*1000:.8f} mV\n"
-                f"Offset +20 V    : {cal_constants['offset_20V_pos']*1000:.8f} mV\n"
-                f"Offset -20 V    : {cal_constants['offset_20V_neg']*1000:.8f} mV\n"
-                f"Offset +250 V   : {cal_constants['offset_250V_pos']*1000:.8f} mV\n"
-                f"Offset -250 V   : {cal_constants['offset_250V_neg']*1000:.8f} mV\n"
-                f"Offset +1000 V  : {cal_constants['offset_10V_pos']*100000:.8f} mV\n"
-                f"Offset -1000 V  : {cal_constants['offset_10V_neg']*100000:.8f} mV\n"
-                f"Resolution ratio: {cal_constants['resolution_ratio']}\n"
-                f"ADC gain        : {cal_constants['adc_gain']*1000:.8f} mV"
-            )
-        )
+        print("Calibration constants before running autocalibration:\n", cal_constants)
         await fluke5440b.acal()
         cal_constants = await fluke5440b.get_calibration_constants()
-        print(
-            (
-                "Calibration constants after running autocalibration:\n"
-                f"Gain 0.2 V      : {cal_constants['gain_0.2V']*1000:.8f} mV\n"
-                f"Gain 2 V        : {cal_constants['gain_2V']*1000:.8f} mV\n"
-                f"Gain 10 V       : {cal_constants['gain_10V']*1000:.8f} mV\n"
-                f"Shift 10 V      : {cal_constants['gain_shift_10V']} ppm\n"
-                f"Gain 20 V       : {cal_constants['gain_20V']*1000:.8f} mV\n"
-                f"Shift 20 V      : {cal_constants['gain_shift_20V']} ppm\n"
-                f"Gain 250 V      : {cal_constants['gain_250V']*1000:.8f} mV\n"
-                f"Shift 250 V     : {cal_constants['gain_shift_250V']} ppm\n"
-                f"Gain 1000 V     : {cal_constants['gain_1000V']*1000:.8f} mV\n"
-                f"Shift 1000 V    : {cal_constants['gain_shift_1000V']} ppm\n"
-                f"Offset +10 V    : {cal_constants['offset_10V_pos']*1000:.8f} mV\n"
-                f"Offset -10 V    : {cal_constants['offset_10V_neg']*1000:.8f} mV\n"
-                f"Offset +20 V    : {cal_constants['offset_20V_pos']*1000:.8f} mV\n"
-                f"Offset -20 V    : {cal_constants['offset_20V_neg']*1000:.8f} mV\n"
-                f"Offset +250 V   : {cal_constants['offset_250V_pos']*1000:.8f} mV\n"
-                f"Offset -250 V   : {cal_constants['offset_250V_neg']*1000:.8f} mV\n"
-                f"Offset +1000 V  : {cal_constants['offset_10V_pos']*100000:.8f} mV\n"
-                f"Offset -1000 V  : {cal_constants['offset_10V_neg']*100000:.8f} mV\n"
-                f"Resolution ratio: {cal_constants['resolution_ratio']}\n"
-                f"ADC gain        : {cal_constants['adc_gain']*1000:.8f} mV"
-            )
-        )
+        print("Calibration constants after running autocalibration:\n", cal_constants)
 
 
 # Report all mistakes managing asynchronous resources.
