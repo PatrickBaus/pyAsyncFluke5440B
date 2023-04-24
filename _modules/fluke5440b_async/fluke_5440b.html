@@ -216,6 +216,7 @@
 
             <span class="k">if</span> <span class="n">status</span> <span class="o">&amp;</span> <span class="n">SerialPollFlags</span><span class="o">.</span><span class="n">ERROR_CONDITION</span><span class="p">:</span>
                 <span class="n">err</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_error</span><span class="p">()</span>  <span class="c1"># clear error flags not produced by us</span>
+                <span class="n">error</span><span class="p">:</span> <span class="n">ErrorCode</span> <span class="o">|</span> <span class="n">SelfTestErrorCode</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">error</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -802,7 +803,9 @@
 
         <span class="n">spoll</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_poll</span><span class="p">()</span>  <span class="c1"># Clear the SRQ bit</span>
         <span class="k">if</span> <span class="n">spoll</span> <span class="o">&amp;</span> <span class="n">SerialPollFlags</span><span class="o">.</span><span class="n">ERROR_CONDITION</span> <span class="ow">and</span> <span class="n">raise_error</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Received error while waiting for device to request service. Serial poll register: </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">spoll</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Received error while waiting for device to request service. Serial poll register: </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">spoll</span>
+            <span class="p">)</span>
             <span class="c1"># If there was an error during waiting, raise it.</span>
             <span class="c1"># I have seen GPIB_HANDSHAKE_ERRORs with a prologix adapter, which does a lot of polling during wait.</span>
             <span class="c1"># Ignore that error for now.</span>
