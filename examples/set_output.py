@@ -60,7 +60,7 @@ else:
 async def main():
     """Set the output voltage and enable the outputs."""
     # No need to explicitly bring up the GPIB connection. This will be done by the instrument.
-    async with Fluke_5440B(connection=gpib_device) as fluke5440b:
+    async with Fluke_5440B(connection=gpib_device, log_level=logging.DEBUG) as fluke5440b:
         await fluke5440b.set_output(10.0)
         # Enable the output binding posts
         # await fluke5440b.set_output_enabled(True)    # Use with caution at high voltages. Check cabling first.

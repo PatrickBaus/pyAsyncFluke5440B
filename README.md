@@ -11,7 +11,6 @@ The library is fully type-hinted.
 > :warning: The following features are not supported (yet):
 > - External calibration: I do not have the means to test this. If you want to help, open a ticket and we can get this done
 > - Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that featuer open a ticket.
-> - Selftest. Fortunately, I only own a calibrator that passes the selft test, so I cannot test the self test function on a machine that throws errors. I have implemented the self test routines and from what I inferred from the manual, it _should_ work with faulty machines and throw an exception, but who knows. If you can test this. I would be gratefuly about feedback.
 
 ## Supported GPIB Hardware
 |Device|Supported|Tested|Comments|

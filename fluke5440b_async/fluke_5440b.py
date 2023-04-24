@@ -27,7 +27,7 @@ from decimal import Decimal
 from types import TracebackType
 from typing import TYPE_CHECKING, Type, cast
 
-from fluke5440b_async.enums import DeviceState, ErrorCode, ModeType, SeparatorType, TerminatorType
+from fluke5440b_async.enums import DeviceState, ErrorCode, ModeType, SelfTestErrorCode, SeparatorType, TerminatorType
 from fluke5440b_async.errors import DeviceError, SelftestError
 from fluke5440b_async.flags import SerialPollFlags, SrqMask, StatusFlags
 
@@ -72,26 +72,26 @@ class CalibrationConstants:  # pylint: disable=too-many-instance-attributes
     def __str__(self) -> str:
         """Pretty-print the calibration constants."""
         return (
-            f"Gain 0.2 V      : {self.gain_02V*10**3:.8f} mV\n"
-            f"Gain 2 V        : {self.gain_2V*10**3:.8f} mV\n"
-            f"Gain 10 V       : {self.gain_10V*10**3:.8f} mV\n"
-            f"Shift 10 V      : {self.gain_shift_10V} µV/V\n"
-            f"Gain 20 V       : {self.gain_20V*10**3:.8f} mV\n"
-            f"Shift 20 V      : {self.gain_shift_20V} µV/V\n"
-            f"Gain 250 V      : {self.gain_250V*10**3:.8f} mV\n"
-            f"Shift 250 V     : {self.gain_shift_250V} µV/V\n"
-            f"Gain 1000 V     : {self.gain_1000V*10**3:.8f} mV\n"
-            f"Shift 1000 V    : {self.gain_shift_1000V} µV/V\n"
-            f"Offset +10 V    : {self.offset_10V_pos*10**3:.8f} mV\n"
-            f"Offset -10 V    : {self.offset_10V_neg*10**3:.8f} mV\n"
-            f"Offset +20 V    : {self.offset_20V_pos*10**3:.8f} mV\n"
-            f"Offset -20 V    : {self.offset_20V_neg*10**3:.8f} mV\n"
-            f"Offset +250 V   : {self.offset_250V_pos*10**3:.8f} mV\n"
-            f"Offset -250 V   : {self.offset_250V_neg*10**3:.8f} mV\n"
-            f"Offset +1000 V  : {self.offset_10V_pos*100000:.8f} mV\n"
-            f"Offset -1000 V  : {self.offset_10V_neg*100000:.8f} mV\n"
-            f"Resolution ratio: {self.resolution_ratio}\n"
-            f"ADC gain        : {self.adc_gain*10**3:.8f} mV"
+            f"Gain 0.2 V       : {self.gain_02V*10**3:.8f} mV\n"
+            f"Gain 2 V         : {self.gain_2V*10**3:.8f} mV\n"
+            f"Gain 10 V        : {self.gain_10V*10**3:.8f} mV\n"
+            f"Gain 20 V        : {self.gain_20V*10**3:.8f} mV\n"
+            f"Gain 250 V       : {self.gain_250V*10**3:.8f} mV\n"
+            f"Gain 1000 V      : {self.gain_1000V*10**3:.8f} mV\n"
+            f"Offset +10 V     : {self.offset_10V_pos*10**3:.8f} mV\n"
+            f"Offset +20 V     : {self.offset_20V_pos*10**3:.8f} mV\n"
+            f"Offset +250 V    : {self.offset_250V_pos*10**3:.8f} mV\n"
+            f"Offset +1000 V   : {self.offset_1000V_pos*10**3:.8f} mV\n"
+            f"Offset -10 V     : {self.offset_10V_neg*10**3:.8f} mV\n"
+            f"Offset -20 V     : {self.offset_20V_neg*10**3:.8f} mV\n"
+            f"Offset -250 V    : {self.offset_250V_neg*10**3:.8f} mV\n"
+            f"Offset -1000 V   : {self.offset_1000V_neg*10**3:.8f} mV\n"
+            f"Gain shift 10 V  : {self.gain_shift_10V} µV/V\n"
+            f"Gain shift 20 V  : {self.gain_shift_20V} µV/V\n"
+            f"Gain shift 250 V : {self.gain_shift_250V} µV/V\n"
+            f"Gain shift 1000 V: {self.gain_shift_1000V} µV/V\n"
+            f"Resolution ratio : {self.resolution_ratio}\n"
+            f"ADC gain         : {self.adc_gain*10**3:.8f} mV"
         )
 
 
@@ -107,7 +107,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         return self.__conn
 
-    def __init__(self, connection: AsyncGpib | AsyncPrologixGpibController):
+    def __init__(self, connection: AsyncGpib | AsyncPrologixGpibController, log_level: int = logging.WARNING):
         """
         Create Fluke 5440B device with the GPIB connection given.
 
@@ -115,12 +115,14 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         ----------
         connection: AsyncGpib or AsyncPrologixGpibController
             The GPIB connection.
+        log_level: int, default=logging.WARNING
+            The level of logging output. By default, only warnings or higher are output.
         """
         self.__conn = connection
         self.__lock: asyncio.Lock | None = None
 
         self.__logger = logging.getLogger(__name__)
-        self.__logger.setLevel(logging.WARNING)  # Only log really important messages by default
+        self.__logger.setLevel(log_level)  # Only log really important messages by default
 
     def __str__(self) -> str:
         return f"Fluke 5440B at {str(self.connection)}"
@@ -177,7 +179,11 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
             if status & SerialPollFlags.ERROR_CONDITION:
                 err = await self.get_error()  # clear error flags not produced by us
-                self.__logger.debug("Calibrator errors at boot: %s.", err)
+                try:
+                    error = ErrorCode(err)
+                except ValueError:
+                    error = SelfTestErrorCode(err)
+                self.__logger.debug("Calibrator errors at boot: %s.", error)
             state = await self.get_state()
             self.__logger.debug("Calibrator state at boot: %s.", state)
             if state != DeviceState.IDLE:
@@ -230,12 +236,13 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             await asyncio.sleep(0.2)  # The instrument is slow in parsing commands
             spoll = await self.serial_poll()
             if spoll & SerialPollFlags.ERROR_CONDITION:
+                self.__logger.debug("Received error while writing command %s. Serial poll register: %s.", cmd, spoll)
                 msg = None
                 if spoll & SerialPollFlags.MSG_RDY:
                     # The command did return some msg, so we need to read that first (and drop it)
                     msg = await self.read()
 
-                err = await self.get_error()
+                err = ErrorCode(await self.get_error())
                 if msg is None:
                     raise DeviceError(f"Device error on command: {cmd.decode('utf-8')}, code: {err}", err)
                 raise DeviceError(
@@ -705,28 +712,25 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
         return StatusFlags(status)
 
-    async def get_error(self) -> ErrorCode:
+    async def get_error(self) -> int:
         """
         Get the last error thrown by the instrument if any. It is recommended to check for errors after using the
         :func:`write` function, if the `test_error` parameter is not set.
         Returns
         -------
-        ErrorCode
-            The last error thrown.
-
-        Raises
-        ------
-        DeviceError
-            Raised if there was an error processing the command.
+        int
+            The last error thrown. It might be an ErrorCode or a SelfTestErrorCode. This is ambiguous and depends on the
+            last command.
         """
-        result = await self.query("GERR", test_error=True)
+        # Do not test for errors, because this is an infinite loop.
+        result = await self.query("GERR", test_error=False)
         try:
             assert isinstance(result, str)
             error_code = int(result)
         except TypeError:
             raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
 
-        return ErrorCode(error_code)
+        return error_code
 
     async def get_state(self) -> DeviceState:
         """
@@ -750,7 +754,8 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
         return DeviceState(dev_state)
 
-    async def __wait_for_rqs(self) -> None:
+    async def __wait_for_rqs(self, raise_error: bool = True) -> SerialPollFlags:
+        """Wait until the device requests service (RQS)"""
         try:
             await self.__conn.wait((1 << 11) | (1 << 14))  # Wait for RQS or TIMO
         except asyncio.TimeoutError:
@@ -759,11 +764,12 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             )
 
         spoll = await self.serial_poll()  # Clear the SRQ bit
-        if spoll & SerialPollFlags.ERROR_CONDITION:
+        if spoll & SerialPollFlags.ERROR_CONDITION and raise_error:
+            self.__logger.debug("Received error while waiting for device to request service. Serial poll register: %s.", spoll)
             # If there was an error during waiting, raise it.
             # I have seen GPIB_HANDSHAKE_ERRORs with a prologix adapter, which does a lot of polling during wait.
             # Ignore that error for now.
-            err = await self.get_error()
+            err = ErrorCode(await self.get_error())
             if err is ErrorCode.GPIB_HANDSHAKE_ERROR:
                 self.__logger.info(
                     "Got error during waiting: %s. "
@@ -772,6 +778,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                 )
             else:
                 raise DeviceError(f"Device error, code: {err}", err)
+        return spoll
 
     async def __wait_for_idle(self) -> None:
         """
@@ -802,12 +809,10 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
                 await self.write("TSTD", test_error=True)
                 while "testing":
-                    await self.__wait_for_rqs()
-                    status = await self.serial_poll()
-                    if status & SerialPollFlags.MSG_RDY:
-                        msg = await self.read()
-                        self.__logger.warning("Digital self-test failed with message: %s.", msg)
-                        raise SelftestError(f"Digital self-test failed with message: {msg}.", msg)
+                    status = await self.__wait_for_rqs(raise_error=False)
+                    if status & SerialPollFlags.ERROR_CONDITION:
+                        error_code = await self.get_error()
+                        raise SelftestError("Digital", SelfTestErrorCode(error_code))
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (
@@ -844,12 +849,10 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
                 await self.write("TSTA", test_error=True)
                 while "testing":
-                    await self.__wait_for_rqs()
-                    status = await self.serial_poll()
-                    if status & SerialPollFlags.MSG_RDY:
-                        msg = await self.read()
-                        self.__logger.warning("Analog self-test failed with message: %s.", msg)
-                        raise SelftestError(f"Analog self-test failed with message: {msg}.", msg)
+                    status = await self.__wait_for_rqs(raise_error=False)
+                    if status & SerialPollFlags.ERROR_CONDITION:
+                        error_code = await self.get_error()
+                        raise SelftestError("Analog", SelfTestErrorCode(error_code))
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (
@@ -886,12 +889,10 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
                 await self.write("TSTH", test_error=True)
                 while "testing":
-                    await self.__wait_for_rqs()
-                    status = await self.serial_poll()
-                    if status & SerialPollFlags.MSG_RDY:
-                        msg = await self.read()
-                        self.__logger.warning("High voltage self-test failed with message: %s.", msg)
-                        raise SelftestError(f"High voltage self-test failed with message: {msg}.", msg)
+                    status = await self.__wait_for_rqs(raise_error=False)
+                    if status & SerialPollFlags.ERROR_CONDITION:
+                        error_code = await self.get_error()
+                        raise SelftestError("High voltage", SelfTestErrorCode(error_code))
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (
@@ -937,7 +938,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                 await self.write("CALI", test_error=True)
                 while "calibrating":
                     await self.__wait_for_rqs()
-                    await self.serial_poll()
                     state = await self.get_state()
                     if state not in (
                         DeviceState.IDLE,
@@ -1045,7 +1045,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             raise ValueError(f"Invalid baud rate. It must be one of: {','.join(map(str, BAUD_RATES_AVAILABLE))}.")
         assert self.__lock is not None
         async with self.__lock:
-            self.__logger.info("Setting baud rate and writing to NVRAM. This takes about 1.5 minutes.")
+            self.__logger.info("Setting baud rate to %d and writing to NVRAM. This takes about 1.5 minutes.", value)
             try:
                 await self.write(f"SBDR {BAUD_RATES_AVAILABLE.index(value):d}", test_error=True)
                 await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait until written to NVRAM

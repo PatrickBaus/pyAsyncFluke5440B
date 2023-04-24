@@ -41,14 +41,14 @@ else:
 
 if "prologix_gpib_async" in sys.modules:
     IP_ADDRESS = "127.0.0.1"
-    # Set the timeout to 300 seconds, State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
+    # Set the timeout to 190 seconds, State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
     # pylint: disable=used-before-assignment  # false positive
     gpib_device = AsyncPrologixGpibEthernetController(
         IP_ADDRESS, pad=7, timeout=300, wait_delay=0.25
     )  # Prologix GPIB Adapter
 elif "async_gpib" in sys.modules:
-    # Set the timeout to 300 seconds State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
-    gpib_device = AsyncGpib(name=0, pad=7, timeout=300)  # NI GPIB adapter, pylint: disable=used-before-assignment
+    # Set the timeout to 190 seconds State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
+    gpib_device = AsyncGpib(name=0, pad=7, timeout=190)  # NI GPIB adapter, pylint: disable=used-before-assignment
     from gpib_ctypes.Gpib import Gpib
 
     gpib_board = Gpib(name=0)
@@ -61,16 +61,16 @@ else:
 async def main():
     """Print the calibration constants, then run ACAL, then print the new constants."""
     # No need to explicitly bring up the GPIB connection. This will be done by the instrument.
-    async with Fluke_5440B(connection=gpib_device) as fluke5440b:
+    async with Fluke_5440B(connection=gpib_device, log_level=logging.DEBUG) as fluke5440b:
         # First run the self-test
         print("Running self-test, then autocalibration.")
         await fluke5440b.selftest_all()
         print("Self-test done.")
         cal_constants = await fluke5440b.get_calibration_constants()
-        print("Calibration constants before running autocalibration:\n", cal_constants)
+        print(f"Calibration constants before running autocalibration:\n{cal_constants}")
         await fluke5440b.acal()
         cal_constants = await fluke5440b.get_calibration_constants()
-        print("Calibration constants after running autocalibration:\n", cal_constants)
+        print(f"Calibration constants after running autocalibration:\n{cal_constants}")
 
 
 # Report all mistakes managing asynchronous resources.

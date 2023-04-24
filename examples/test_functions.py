@@ -126,7 +126,7 @@ async def test_setters(device: Fluke_5440B):
 async def main():
     """Run the example and test all getters first, then test the setters."""
     # No need to explicitly bring up the GPIB connection. This will be done by the instrument.
-    async with Fluke_5440B(connection=gpib_device) as fluke5440b:
+    async with Fluke_5440B(connection=gpib_device, log_level=logging.DEBUG) as fluke5440b:
         await test_getters(fluke5440b)
         await test_setters(fluke5440b)
 
