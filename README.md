@@ -1,10 +1,10 @@
-[![pylint](https://github.com/PatrickBaus/pyAsyncFluke5440B/actions/workflows/pylint.yml/badge.svg)](https://github.com/PatrickBaus/pyAsyncHP3478A/actions/workflows/pylint.yml)
+[![pylint](../../actions/workflows/pylint.yml/badge.svg)](../../actions/workflows/pylint.yml)
 [![PyPI](https://img.shields.io/pypi/v/fluke5440b_async)](https://pypi.org/project/fluke5440b_async/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fluke5440b_async)
 ![PyPI - Status](https://img.shields.io/pypi/status/fluke5440b_async)
 [![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 # fluke5440b-async
-Python3 AsyncIO Fluke 5440B driver. This library requires Python [asyncio](https://docs.python.org/3/library/asyncio.html) and AsyncIO library for the GPIB adapter.
+Python3 asyncio Fluke 5440B driver. This library requires Python [asyncio](https://docs.python.org/3/library/asyncio.html) and asyncio library for the GPIB adapter.
 
 The library is fully type-hinted.
 
@@ -13,10 +13,10 @@ The library is fully type-hinted.
 > - Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that featuer open a ticket.
 
 ## Supported GPIB Hardware
-|Device|Supported|Tested|Comments|
-|--|--|--|--|
-|[AsyncIO Prologix GPIB library](https://github.com/PatrickBaus/pyAsyncPrologixGpib)|:heavy_check_mark:|:heavy_check_mark:|  |
-|[AsyncIO linux-gpib wrapper](https://github.com/PatrickBaus/pyAsyncGpib)|:heavy_check_mark:|:heavy_check_mark:|  |
+| Device                                                                              |Supported|Tested|Comments|
+|-------------------------------------------------------------------------------------|--|--|--|
+| [asyncio Prologix GPIB library](https://github.com/PatrickBaus/pyAsyncPrologixGpib) |:heavy_check_mark:|:heavy_check_mark:|  |
+| [asyncio linux-gpib wrapper](https://github.com/PatrickBaus/pyAsyncGpib)            |:heavy_check_mark:|:heavy_check_mark:|  |
 
 Tested using Linux, but should work on Mac OSX, Windows or any OS with Python support.
 
@@ -91,7 +91,7 @@ See [examples/](examples/) for more working examples.
 
 ## Versioning
 
-I use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/PatrickBaus/pyAsyncPrologix/tags).
+I use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](../../tags).
 
 ## Authors
 
