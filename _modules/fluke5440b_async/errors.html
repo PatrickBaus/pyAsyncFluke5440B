@@ -1,17 +1,16 @@
-
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>fluke5440b_async.errors &#8212; fluke5440b_async v1.0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nature.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nature.css?v=601dbdee" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=3bc2df39" />
+    <script src="../../_static/documentation_options.js?v=292eb321"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
@@ -40,11 +39,16 @@
 <span class="kn">from</span> <span class="nn">.enums</span> <span class="kn">import</span> <span class="n">ErrorCode</span><span class="p">,</span> <span class="n">SelfTestErrorCode</span>
 
 
-<div class="viewcode-block" id="Fluke5440bError"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.errors.Fluke5440bError">[docs]</a><span class="k">class</span> <span class="nc">Fluke5440bError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<div class="viewcode-block" id="Fluke5440bError">
+<a class="viewcode-back" href="../../modules.html#fluke5440b_async.errors.Fluke5440bError">[docs]</a>
+<span class="k">class</span> <span class="nc">Fluke5440bError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The base class for all Fluke 5540B exceptions&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="DeviceError"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.errors.DeviceError">[docs]</a><span class="k">class</span> <span class="nc">DeviceError</span><span class="p">(</span><span class="n">Fluke5440bError</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DeviceError">
+<a class="viewcode-back" href="../../modules.html#fluke5440b_async.errors.DeviceError">[docs]</a>
+<span class="k">class</span> <span class="nc">DeviceError</span><span class="p">(</span><span class="n">Fluke5440bError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The device returned an error during operation.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">error_code</span><span class="p">:</span> <span class="n">ErrorCode</span><span class="p">):</span>
@@ -53,7 +57,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">error_code</span></div>
 
 
-<div class="viewcode-block" id="SelftestError"><a class="viewcode-back" href="../../modules.html#fluke5440b_async.errors.SelftestError">[docs]</a><span class="k">class</span> <span class="nc">SelftestError</span><span class="p">(</span><span class="n">Fluke5440bError</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SelftestError">
+<a class="viewcode-back" href="../../modules.html#fluke5440b_async.errors.SelftestError">[docs]</a>
+<span class="k">class</span> <span class="nc">SelftestError</span><span class="p">(</span><span class="n">Fluke5440bError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The device returned an error during self-test. See page 4-8 of the service manual for details.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selftest</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">error_code</span><span class="p">:</span> <span class="n">SelfTestErrorCode</span><span class="p">):</span>
@@ -63,6 +70,7 @@
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">error_code</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>
@@ -100,8 +108,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 6.2.0.
+    &#169; Copyright 2023, Patrick Baus.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
     </div>
   </body>
 </html>
