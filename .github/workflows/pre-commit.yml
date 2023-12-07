@@ -12,8 +12,15 @@ jobs:
         python-version: [ "3.10" ]
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
+    - name: Checkout source repository
+      uses: actions/checkout@v4
+    - name: Set up python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: pre-commit/action@v3.0.0
+    - name: Install dependencies for testing
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install .[test]
+    - name: Run pre-commit
+      uses: pre-commit/action@v3.0.0
