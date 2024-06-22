@@ -1,5 +1,5 @@
 [project]
-name = "fluke5440b_async"
+name = "fluke5440b-async"
 authors = [
   { name="Patrick Baus", email="patrick.baus@physik.tu-darmstadt.de" },
 ]
