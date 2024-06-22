@@ -1,4 +1,5 @@
 """Enums are used to represent the device functions and settings."""
+
 from __future__ import annotations
 
 from enum import Enum

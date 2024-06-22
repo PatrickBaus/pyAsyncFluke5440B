@@ -1,4 +1,5 @@
 """Custom errors raised by the Fluke 5440B."""
+
 from .enums import ErrorCode, SelfTestErrorCode
 
 

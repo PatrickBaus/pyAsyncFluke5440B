@@ -1,5 +1,5 @@
 [project]
-name = "fluke5440b_async"
+name = "fluke5440b-async"
 authors = [
   { name="Patrick Baus", email="patrick.baus@physik.tu-darmstadt.de" },
 ]
@@ -49,7 +49,7 @@ doc = [
 ]
 
 test = [
-    "mypy", "pylint", "gpib-ctypes", "prologix-gpib-async"
+    "mypy", "pylint", "gpib-ctypes", "prologix-gpib-async", "setuptools",
 ]
 
 [tool.pylint.'MESSAGES CONTROL']

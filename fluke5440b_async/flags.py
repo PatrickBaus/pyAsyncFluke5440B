@@ -1,4 +1,5 @@
 """Flags are used for the status registers returned by the device."""
+
 from __future__ import annotations
 
 from enum import Flag
