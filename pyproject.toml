@@ -49,7 +49,7 @@ doc = [
 ]
 
 test = [
-    "mypy", "pylint", "gpib-ctypes", "prologix-gpib-async"
+    "mypy", "pylint", "gpib-ctypes", "prologix-gpib-async", "setuptools",
 ]
 
 [tool.pylint.'MESSAGES CONTROL']
