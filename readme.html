@@ -6,18 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Readme &#8212; fluke5440b_async v1.0.3 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=0f882399" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=279e0f84" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=3bc2df39" />
     <script src="_static/documentation_options.js?v=baaebd52"></script>
-    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Module Documentation" href="modules.html" />
     <link rel="prev" title="Home" href="index.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -131,13 +131,13 @@ context manager syntax or invoke the calls manually:</p>
 </pre></div>
 </div>
 <p>A simple example for setting the output voltage.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyAsyncFluke5440B.Fluke_5440B</span> <span class="kn">import</span> <span class="n">Fluke_5440B</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyAsyncFluke5440B.Fluke_5440B</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fluke_5440B</span>
 
-<span class="kn">from</span> <span class="nn">pyAsyncGpib.pyAsyncGpib.AsyncGpib</span> <span class="kn">import</span> <span class="n">AsyncGpib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyAsyncGpib.pyAsyncGpib.AsyncGpib</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncGpib</span>
 
 
 <span class="c1"># This example will print voltage data to the console</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="c1"># The default GPIB address is 7.</span>
     <span class="k">async</span> <span class="k">with</span> <span class="n">Fluke_5440B</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">AsyncGpib</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span> <span class="k">as</span> <span class="n">fluke5440b</span><span class="p">:</span>
         <span class="c1"># No need to explicitely bring up the GPIB connection. This will be done by the instrument.</span>
@@ -175,7 +175,7 @@ context manager syntax or invoke the calls manually:</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="index.html">Table of Contents</a></h3>
@@ -229,7 +229,7 @@ context manager syntax or invoke the calls manually:</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -250,7 +250,7 @@ context manager syntax or invoke the calls manually:</p>
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     </div>
   </body>
 </html>

@@ -5,16 +5,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>fluke5440b_async.enums &#8212; fluke5440b_async v1.0.3 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nature.css?v=0f882399" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nature.css?v=279e0f84" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=3bc2df39" />
     <script src="../../_static/documentation_options.js?v=baaebd52"></script>
-    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -37,14 +37,14 @@
   <h1>Source code for fluke5440b_async.enums</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Enums are used to represent the device functions and settings.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
 
 
 <div class="viewcode-block" id="ErrorCode">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.ErrorCode">[docs]</a>
-<span class="k">class</span> <span class="nc">ErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The error codes used by the Fluke 5440B.&quot;&quot;&quot;</span>
 
     <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
@@ -72,7 +72,7 @@
 
 <div class="viewcode-block" id="SelfTestErrorCode">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.SelfTestErrorCode">[docs]</a>
-<span class="k">class</span> <span class="nc">SelfTestErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SelfTestErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The error codes thrown by the self-test routine. See page 4-8 of the service manual for details.&quot;&quot;&quot;</span>
 
     <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
@@ -165,7 +165,7 @@
 
 <div class="viewcode-block" id="ModeType">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.ModeType">[docs]</a>
-<span class="k">class</span> <span class="nc">ModeType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ModeType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The output modes. Voltage boost means a connected Fluke 5205A power amplifier and current boost means a connected</span>
 <span class="sd">    Fluke 5220A transconductance amplifier.&quot;&quot;&quot;</span>
 
@@ -177,7 +177,7 @@
 
 <div class="viewcode-block" id="SeparatorType">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.SeparatorType">[docs]</a>
-<span class="k">class</span> <span class="nc">SeparatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SeparatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The separator used to distinguish multiple return values.&quot;&quot;&quot;</span>
 
     <span class="n">COMMA</span> <span class="o">=</span> <span class="mi">0</span>
@@ -187,7 +187,7 @@
 
 <div class="viewcode-block" id="DeviceState">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.DeviceState">[docs]</a>
-<span class="k">class</span> <span class="nc">DeviceState</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeviceState</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The internal device state.&quot;&quot;&quot;</span>
 
     <span class="n">IDLE</span> <span class="o">=</span> <span class="mi">0</span>
@@ -233,7 +233,7 @@
 
 <div class="viewcode-block" id="TerminatorType">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.TerminatorType">[docs]</a>
-<span class="k">class</span> <span class="nc">TerminatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TerminatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The line terminator used by the instrument.&quot;&quot;&quot;</span>
 
     <span class="n">EOI</span> <span class="o">=</span> <span class="mi">0</span>
@@ -248,7 +248,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -264,7 +264,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -280,7 +280,7 @@
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     </div>
   </body>
 </html>

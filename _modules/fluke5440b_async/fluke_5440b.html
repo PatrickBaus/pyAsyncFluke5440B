@@ -5,16 +5,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>fluke5440b_async.fluke_5440b &#8212; fluke5440b_async v1.0.3 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../_static/nature.css?v=0f882399" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/nature.css?v=279e0f84" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=3bc2df39" />
     <script src="../../_static/documentation_options.js?v=baaebd52"></script>
-    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -55,27 +55,27 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">This is an asyncIO driver for the Fluke 5440B voltage calibrator to abstract away the GPIB interface.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span> <span class="nn">asyncio</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
-<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">TracebackType</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">decimal</span><span class="w"> </span><span class="kn">import</span> <span class="n">Decimal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">TracebackType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">cast</span>
 
-<span class="kn">from</span> <span class="nn">fluke5440b_async.enums</span> <span class="kn">import</span> <span class="n">DeviceState</span><span class="p">,</span> <span class="n">ErrorCode</span><span class="p">,</span> <span class="n">ModeType</span><span class="p">,</span> <span class="n">SelfTestErrorCode</span><span class="p">,</span> <span class="n">SeparatorType</span><span class="p">,</span> <span class="n">TerminatorType</span>
-<span class="kn">from</span> <span class="nn">fluke5440b_async.errors</span> <span class="kn">import</span> <span class="n">DeviceError</span><span class="p">,</span> <span class="n">SelftestError</span>
-<span class="kn">from</span> <span class="nn">fluke5440b_async.flags</span> <span class="kn">import</span> <span class="n">SerialPollFlags</span><span class="p">,</span> <span class="n">SrqMask</span><span class="p">,</span> <span class="n">StatusFlags</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fluke5440b_async.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeviceState</span><span class="p">,</span> <span class="n">ErrorCode</span><span class="p">,</span> <span class="n">ModeType</span><span class="p">,</span> <span class="n">SelfTestErrorCode</span><span class="p">,</span> <span class="n">SeparatorType</span><span class="p">,</span> <span class="n">TerminatorType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fluke5440b_async.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeviceError</span><span class="p">,</span> <span class="n">SelftestError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fluke5440b_async.flags</span><span class="w"> </span><span class="kn">import</span> <span class="n">SerialPollFlags</span><span class="p">,</span> <span class="n">SrqMask</span><span class="p">,</span> <span class="n">StatusFlags</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>  <span class="c1"># type: ignore # Python 3.11</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>  <span class="c1"># type: ignore # Python 3.11</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Self</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Self</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">async_gpib</span> <span class="kn">import</span> <span class="n">AsyncGpib</span>
-    <span class="kn">from</span> <span class="nn">prologix_gpib_async</span> <span class="kn">import</span> <span class="n">AsyncPrologixGpibController</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">async_gpib</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncGpib</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">prologix_gpib_async</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncPrologixGpibController</span>
 
 <span class="n">BAUD_RATES_AVAILABLE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">110</span><span class="p">,</span> <span class="mf">134.5</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">600</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,</span> <span class="mi">1800</span><span class="p">,</span> <span class="mi">2400</span><span class="p">,</span> <span class="mi">4800</span><span class="p">,</span> <span class="mi">9600</span><span class="p">)</span>
 
@@ -83,7 +83,7 @@
 <div class="viewcode-block" id="CalibrationConstants">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.CalibrationConstants">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">CalibrationConstants</span><span class="p">:</span>  <span class="c1"># pylint: disable=too-many-instance-attributes</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CalibrationConstants</span><span class="p">:</span>  <span class="c1"># pylint: disable=too-many-instance-attributes</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The calibration constants of the Fluke 5440B.&quot;&quot;&quot;</span>
 
     <span class="c1"># capital V due to SI pylint: disable=invalid-name</span>
@@ -108,7 +108,7 @@
     <span class="n">resolution_ratio</span><span class="p">:</span> <span class="n">Decimal</span>
     <span class="n">adc_gain</span><span class="p">:</span> <span class="n">Decimal</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pretty-print the calibration constants.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Gain 0.2 V       : </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">gain_02V</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="mi">3</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2"> mV</span><span class="se">\n</span><span class="s2">&quot;</span>
@@ -137,13 +137,13 @@
 
 <div class="viewcode-block" id="Fluke_5440B">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B">[docs]</a>
-<span class="k">class</span> <span class="nc">Fluke_5440B</span><span class="p">:</span>  <span class="c1"># noqa pylint: disable=too-many-public-methods,invalid-name,too-many-lines</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Fluke_5440B</span><span class="p">:</span>  <span class="c1"># noqa pylint: disable=too-many-public-methods,invalid-name,too-many-lines</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The driver for the Fluke 5440B voltage calibrator. It supports both linux-gpib and the Prologix GPIB adapters.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncGpib</span> <span class="o">|</span> <span class="n">AsyncPrologixGpibController</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncGpib</span> <span class="o">|</span> <span class="n">AsyncPrologixGpibController</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The GPIB connection.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -151,7 +151,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.__init__">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">:</span> <span class="n">AsyncGpib</span> <span class="o">|</span> <span class="n">AsyncPrologixGpibController</span><span class="p">,</span> <span class="n">log_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connection</span><span class="p">:</span> <span class="n">AsyncGpib</span> <span class="o">|</span> <span class="n">AsyncPrologixGpibController</span><span class="p">,</span> <span class="n">log_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create Fluke 5440B device with the GPIB connection given.</span>
 
@@ -169,21 +169,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">log_level</span><span class="p">)</span>  <span class="c1"># Only log really important messages by default</span></div>
 
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Fluke 5440B at </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="fm">__aexit__</span><span class="p">(</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aexit__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="ne">BaseException</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span> <span class="ne">BaseException</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">traceback</span><span class="p">:</span> <span class="n">TracebackType</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Fluke_5440B.get_id">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_id">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the instrument name and the software version string. To emulate the `*IDN?` SCPI command, the result</span>
 <span class="sd">        is a tuple containing the Manufacturer, Device, Serial (0) and FW version.</span>
@@ -198,7 +198,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.set_log_level">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_log_level">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_log_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loglevel</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_log_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loglevel</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the log level of the library. By default, the level is set to warning.</span>
 <span class="sd">        Parameters</span>
@@ -211,7 +211,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.connect">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.connect">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Connect the GPIB connection and configure the GPIB device for the DMM. This function must be called from the</span>
 <span class="sd">        AsyncIO loop and takes care of connecting the GPIB adapter.</span>
@@ -251,7 +251,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.disconnect">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.disconnect">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Disconnect from the instrument and clean up. This call will also automatically remove the local lockout if set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -266,7 +266,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.write">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.write">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">test_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">test_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Write a string or bytestring to the instrument.</span>
 <span class="sd">        Parameters</span>
@@ -312,7 +312,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.read">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.read">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Read from the device.</span>
 <span class="sd">        Returns</span>
@@ -326,7 +326,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.query">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.query">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">test_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">test_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Write a string or bytestring to the instrument, then immediately read back the result. This is a combined call</span>
 <span class="sd">        to :func:`write` and :func:`read`.</span>
@@ -351,13 +351,13 @@
         <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
 
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">__wait_for_state_change</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">__wait_for_state_change</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">while</span> <span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_poll</span><span class="p">())</span> <span class="o">&amp;</span> <span class="n">SerialPollFlags</span><span class="o">.</span><span class="n">DOING_STATE_CHANGE</span><span class="p">:</span>
             <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Fluke_5440B.reset">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.reset">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Place the instrument in standby, enable voltage mode, set the output voltage to 0.0, disable the divider output,</span>
 <span class="sd">        the external guard mode and external sense mode.</span>
@@ -384,7 +384,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.local">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.local">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">local</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">local</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Enable the front panel buttons, if the instrument is in local lock out.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -393,7 +393,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.get_terminator">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_terminator">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_terminator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TerminatorType</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_terminator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TerminatorType</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the line terminator sent by the instrument.</span>
 <span class="sd">        Returns</span>
@@ -408,11 +408,11 @@
                 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
                 <span class="n">term</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
             <span class="k">return</span> <span class="n">TerminatorType</span><span class="p">(</span><span class="n">term</span><span class="p">)</span></div>
 
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">__set_terminator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">TerminatorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">__set_terminator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">TerminatorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the line terminator used by the instrument. The choice of line terminators are EOI, &lt;CR&gt;&lt;LF&gt;&lt;EOI&gt;,</span>
 <span class="sd">        &lt;LF&gt;&lt;EOI&gt;, &lt;CR&gt;&lt;LF&gt; and &lt;LF&gt; only. Engage the lock, before calling.</span>
@@ -431,7 +431,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.get_separator">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_separator">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SeparatorType</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SeparatorType</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the separator used by the instrument to separate multiple queries.</span>
 <span class="sd">        Returns</span>
@@ -449,11 +449,11 @@
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
             <span class="n">sep</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
         <span class="k">return</span> <span class="n">SeparatorType</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span></div>
 
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">__set_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">SeparatorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">__set_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">SeparatorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the query separator used by the instrument. The choice of separators are &quot;,&quot; (colon) and &quot;;&quot; (semicolon).</span>
 <span class="sd">        Engage the lock, before calling.</span>
@@ -473,7 +473,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.set_mode">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_mode">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ModeType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ModeType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Enabled either voltage or current boost mode using an external Fluke 5205A power amplifier or a Fluke 5220A</span>
 <span class="sd">        transconductance amplifier.</span>
@@ -493,7 +493,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.set_output_enabled">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_output_enabled">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_output_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_output_enabled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the output to either STANDBY or OPR.</span>
 <span class="sd">        Parameters</span>
@@ -511,7 +511,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.get_output">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_output">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_output</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Decimal</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_output</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Decimal</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the output voltage currently set.</span>
 <span class="sd">        Returns</span>
@@ -530,7 +530,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">__limit_numeric</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Decimal</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__limit_numeric</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Decimal</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        According to page 4-5 of the operator manual, the value needs to meet the following criteria:</span>
 <span class="sd">         - Maximum of 8 significant digits</span>
@@ -558,7 +558,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.set_output">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_output">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Decimal</span><span class="p">,</span> <span class="n">test_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Decimal</span><span class="p">,</span> <span class="n">test_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the output of the calibrator. If an output greater than ±22 V is set, the calibrator will automatically go</span>
 <span class="sd">        to STBY for safety reasons. Call `set_output_enabled(True)` to re-enable the output.</span>
@@ -580,13 +580,13 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SOUT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__limit_numeric</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">test_error</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">DeviceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">OUTPUT_OUTSIDE_LIMITS</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Value out of range&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Value out of range&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
             <span class="k">raise</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.set_internal_sense">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_internal_sense">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_internal_sense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_internal_sense</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        If the load resistance is greater than 1 MΩ, 2-wire calibration can be used. Otherwise, the cable resistance</span>
 <span class="sd">        will reduce the accuracy. Use internal sense for 2-wire calibrations. See page 2-13 of the operator manual for</span>
@@ -606,13 +606,13 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;ISNS&quot;</span> <span class="k">if</span> <span class="n">enabled</span> <span class="k">else</span> <span class="s2">&quot;ESNS&quot;</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">DeviceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">INVALID_SENSE_MODE</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Sense mode not allowed.&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Sense mode not allowed.&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
             <span class="k">raise</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.set_internal_guard">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_internal_guard">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_internal_guard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_internal_guard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        If set, the guard is internally connected to the output LO terminal. Use this, if the device being calibrated</span>
 <span class="sd">        has floating inputs. If calibrating devices with grounded inputs, connect the guard terminal to the input LO of</span>
@@ -631,13 +631,13 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;IGRD&quot;</span> <span class="k">if</span> <span class="n">enabled</span> <span class="k">else</span> <span class="s2">&quot;EGRD&quot;</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">DeviceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">INVALID_GUARD_MODE</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Guard mode not allowed.&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Guard mode not allowed.&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
             <span class="k">raise</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.set_divider">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_divider">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_divider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_divider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Enable the internal 1:10 and 1:100 divider to reduce the output noise and increase the resolution of voltages</span>
 <span class="sd">        in the range -2.2 V to 2.2 V. Do not enable the external sense connection via :func:`set_internal_sense(False)`,</span>
@@ -659,7 +659,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.get_voltage_limit">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_voltage_limit">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_voltage_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Decimal</span><span class="p">,</span> <span class="n">Decimal</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_voltage_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Decimal</span><span class="p">,</span> <span class="n">Decimal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the voltage limit set on the instrument. It will raise an error, when in current boost mode.</span>
 <span class="sd">        Returns</span>
@@ -679,7 +679,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.set_voltage_limit">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_voltage_limit">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_voltage_limit</span><span class="p">(</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_voltage_limit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Decimal</span><span class="p">,</span> <span class="n">value2</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Decimal</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -716,13 +716,13 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SVLM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__limit_numeric</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">DeviceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">LIMIT_OUT_OF_RANGE</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid voltage limit.&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid voltage limit.&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
             <span class="k">raise</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.get_current_limit">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_current_limit">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_current_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Decimal</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Decimal</span><span class="p">,</span> <span class="n">Decimal</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_current_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Decimal</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Decimal</span><span class="p">,</span> <span class="n">Decimal</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the current limit set on the instrument. It will raise an error, when in voltage boost mode.</span>
 <span class="sd">        Returns</span>
@@ -744,7 +744,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.set_current_limit">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_current_limit">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_current_limit</span><span class="p">(</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_current_limit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Decimal</span><span class="p">,</span> <span class="n">value2</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Decimal</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -780,11 +780,11 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SCLM </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__limit_numeric</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">DeviceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">LIMIT_OUT_OF_RANGE</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid current limit.&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid current limit.&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
             <span class="k">raise</span></div>
 
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">_get_software_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_get_software_version</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Query the version number of the device software. It will return a string formatted as dd.dd.</span>
 <span class="sd">        Returns</span>
@@ -803,7 +803,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.get_status">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_status">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StatusFlags</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StatusFlags</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the status of the instrument. The status flags contain the mode the instrument is running in, like boost</span>
 <span class="sd">        mode, or the state of the external sense connection, etc.</span>
@@ -822,14 +822,14 @@
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
             <span class="n">status</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
 
         <span class="k">return</span> <span class="n">StatusFlags</span><span class="p">(</span><span class="n">status</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.get_error">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_error">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_error</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_error</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the last error thrown by the instrument if any. It is recommended to check for errors after using the</span>
 <span class="sd">        :func:`write` function, if the `test_error` parameter is not set.</span>
@@ -845,14 +845,14 @@
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
             <span class="n">error_code</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
 
         <span class="k">return</span> <span class="n">error_code</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.get_state">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_state">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceState</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceState</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        While the instrument is running long jobs, it signals its current state. Use this to poll the state.</span>
 <span class="sd">        Returns</span>
@@ -870,12 +870,12 @@
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
             <span class="n">dev_state</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
 
         <span class="k">return</span> <span class="n">DeviceState</span><span class="p">(</span><span class="n">dev_state</span><span class="p">)</span></div>
 
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">__wait_for_rqs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raise_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SerialPollFlags</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">__wait_for_rqs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raise_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SerialPollFlags</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait until the device requests service (RQS)&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span><span class="o">.</span><span class="n">wait</span><span class="p">((</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">11</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">14</span><span class="p">))</span>  <span class="c1"># Wait for RQS or TIMO</span>
@@ -903,7 +903,7 @@
                 <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Device error, code: </span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">spoll</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">__wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">__wait_for_idle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Make sure, that SrqMask.DOING_STATE_CHANGE is set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -915,7 +915,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.selftest_digital">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.selftest_digital">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">selftest_digital</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">selftest_digital</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Test the main CPU, the front panel CPU and the guard CPU. It will take about 5 seconds during which the</span>
 <span class="sd">        instrument hardware is blocked. See page 3-19 of the operator manual for details.</span>
@@ -958,7 +958,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.selftest_analog">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.selftest_analog">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">selftest_analog</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">selftest_analog</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Test the ADC, the low voltage part and the oven. It will take about 4 minutes during which the instrument</span>
 <span class="sd">        hardware is blocked. See page 3-19 of the operator manual for details.</span>
@@ -1001,7 +1001,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.selftest_hv">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.selftest_hv">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">selftest_hv</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">selftest_hv</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Test the ADC and the high voltage part. It will take about 1 minute during which the instrument hardware is</span>
 <span class="sd">        blocked. See page 3-20 of the operator manual for details.</span>
@@ -1043,7 +1043,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.selftest_all">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.selftest_all">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">selftest_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">selftest_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Run all three self-tests. This function is a combination of :func:`selftest_digital`, :func:`selftest_analog`</span>
 <span class="sd">        and :func:`selftest_hv`.</span>
@@ -1060,7 +1060,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.acal">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.acal">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">acal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">acal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Run the internal calibration routine. It will take about 6.5 minutes during which the instrument hardware is</span>
 <span class="sd">        blocked. See page 3-2 of the operator manual for details.</span>
@@ -1108,7 +1108,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.get_calibration_constants">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_calibration_constants">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_calibration_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CalibrationConstants</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_calibration_constants</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CalibrationConstants</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Query the calibration constants and gain shifts with respect to the previous internal calibration. See page 3-18</span>
 <span class="sd">        of the operator manual for details.</span>
@@ -1150,7 +1150,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.get_rs232_baud_rate">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_rs232_baud_rate">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_rs232_baud_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_rs232_baud_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the RS-232 the baud rate in bit/s.</span>
 <span class="sd">        Returns</span>
@@ -1168,13 +1168,13 @@
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
             <span class="n">baud_rate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
         <span class="k">return</span> <span class="n">BAUD_RATES_AVAILABLE</span><span class="p">[</span><span class="n">baud_rate</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.set_rs232_baud_rate">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_rs232_baud_rate">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_rs232_baud_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_rs232_baud_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the baud rate of the RS-232 interface.</span>
 <span class="sd">        Parameters</span>
@@ -1203,7 +1203,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.set_enable_rs232">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_enable_rs232">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_enable_rs232</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_enable_rs232</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Enable the RS-232 printer port.</span>
 <span class="sd">        Parameters</span>
@@ -1221,7 +1221,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.serial_poll">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.serial_poll">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">serial_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SerialPollFlags</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">serial_poll</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SerialPollFlags</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Poll the serial output buffer of the device. This can be used to query for the SRQ bit when device requests</span>
 <span class="sd">        service, has encountered an error or is busy.</span>
@@ -1235,7 +1235,7 @@
 
 <div class="viewcode-block" id="Fluke_5440B.get_srq_mask">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.get_srq_mask">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_srq_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SrqMask</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_srq_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SrqMask</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the SRQ mask. This mask is used to determine, when the device will signal the SRQ line.</span>
 <span class="sd">        Returns</span>
@@ -1253,13 +1253,13 @@
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
         <span class="k">return</span> <span class="n">SrqMask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.set_srq_mask">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.Fluke_5440B.set_srq_mask">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">set_srq_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">SrqMask</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_srq_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">SrqMask</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the service request mask register. Each bit set, will signal the SRQ line, when a service request of the</span>
 <span class="sd">        device is triggered.</span>
@@ -1283,7 +1283,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -1299,7 +1299,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -1315,7 +1315,7 @@
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     </div>
   </body>
 </html>

@@ -6,17 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Examples &#8212; fluke5440b_async v1.0.3 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=0f882399" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=279e0f84" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=3bc2df39" />
     <script src="_static/documentation_options.js?v=baaebd52"></script>
-    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Module Documentation" href="modules.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -74,16 +74,16 @@ different hardware solutions.</p>
 <span class="c1"># ##### END GPL LICENSE BLOCK #####</span>
 <span class="sd">&quot;&quot;&quot;This is a simple example that uses the Prologix Ethernet adapter to set the output voltage of the calibrator.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 
-<span class="kn">from</span> <span class="nn">prologix_gpib_async</span> <span class="kn">import</span> <span class="n">AsyncPrologixGpibEthernetController</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">prologix_gpib_async</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncPrologixGpibEthernetController</span>
 
-<span class="kn">from</span> <span class="nn">fluke5440b_async</span> <span class="kn">import</span> <span class="n">Fluke_5440B</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fluke5440b_async</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fluke_5440B</span>
 
 <span class="n">IP_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span>
 
 
-<span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the output voltage and enable the outputs.&quot;&quot;&quot;</span>
     <span class="c1"># No need to explicitly bring up the GPIB connection. This will be done by the instrument.</span>
     <span class="k">async</span> <span class="k">with</span> <span class="n">Fluke_5440B</span><span class="p">(</span>
@@ -110,7 +110,7 @@ different hardware solutions.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h3><a href="index.html">Table of Contents</a></h3>
@@ -149,7 +149,7 @@ different hardware solutions.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -167,7 +167,7 @@ different hardware solutions.</p>
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
     </div>
   </body>
 </html>
