@@ -11,7 +11,7 @@ The library is fully type-hinted.
 
 > :warning: The following features are not supported (yet):
 > - External calibration: I do not have the means to test this. If you want to help, open a ticket and we can get this done
-> - Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that featuer open a ticket.
+> - Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that feature open a ticket.
 
 ## Supported GPIB Hardware
 | Device                                                                              |Supported|Tested|Comments|
