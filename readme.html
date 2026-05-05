@@ -52,13 +52,13 @@
 <a class="reference external" href="https://github.com/psf/black"><img alt="code style" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a></p>
 <section id="fluke5440b-async">
 <h2>fluke5440b-async<a class="headerlink" href="#fluke5440b-async" title="Link to this heading">¶</a></h2>
-<p>Python3 asyncio Fluke 5440B driver. This library requires Python <a class="reference external" href="https://docs.python.org/3/library/asyncio.html">asyncio</a> and asyncio library for the GPIB adapter.</p>
+<p>Python3 asyncio Fluke 5440B driver. This library requires Python <a class="reference external" href="https://docs.python.org/3/library/asyncio.html">asyncio</a> and an asyncio library for the GPIB adapter.</p>
 <p>The library is fully type-hinted.</p>
 <blockquote>
 <div><p>:warning: The following features are not supported (yet):</p>
 <ul class="simple">
-<li><p>External calibration: I do not have the means to test this. If you want to help, open a ticket and we can get this done</p></li>
-<li><p>Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that feature open a ticket.</p></li>
+<li><p>External calibration: I do not have the means to test this. If you want to help, open a ticket and we can get this done.</p></li>
+<li><p>Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that feature, open a ticket.</p></li>
 </ul>
 </div></blockquote>
 <section id="supported-gpib-hardware">
@@ -116,7 +116,7 @@ pip<span class="w"> </span>install<span class="w"> </span>fluke5440b-async
 These are harmless and can be ignored.</p>
 </div></blockquote>
 <p>The library uses an asynchronous context manager to make cleanup easier. You can use either the
-context manager syntax or invoke the calls manually:</p>
+context manager syntax, or invoke the calls manually:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">async</span> <span class="k">with</span> <span class="n">Fluke_5440B</span><span class="p">(</span><span class="n">connection</span><span class="o">=</span><span class="n">gpib_device</span><span class="p">)</span> <span class="k">as</span> <span class="n">fluke5440b</span><span class="p">:</span>
     <span class="c1"># Add your code here</span>
     <span class="o">...</span>
