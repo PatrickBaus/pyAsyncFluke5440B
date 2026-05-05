@@ -5,13 +5,13 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 [![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 # fluke5440b-async
-Python3 asyncio Fluke 5440B driver. This library requires Python [asyncio](https://docs.python.org/3/library/asyncio.html) and asyncio library for the GPIB adapter.
+Python3 asyncio Fluke 5440B driver. This library requires Python [asyncio](https://docs.python.org/3/library/asyncio.html) and an asyncio library for the GPIB adapter.
 
 The library is fully type-hinted.
 
 > :warning: The following features are not supported (yet):
-> - External calibration: I do not have the means to test this. If you want to help, open a ticket and we can get this done
-> - Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that feature open a ticket.
+> - External calibration: I do not have the means to test this. If you want to help, open a ticket and we can get this done.
+> - Setting and retrieving DUUT tolerances and errors. I believe this is best done in software on the host computer and not done internally in the calibrator. If you really need that feature, open a ticket.
 
 ## Supported GPIB Hardware
 | Device                                                                              |Supported|Tested|Comments|
@@ -47,7 +47,7 @@ pip install prologix-gpib-async    # or alternatively
 > These are harmless and can be ignored.
 
 The library uses an asynchronous context manager to make cleanup easier. You can use either the
-context manager syntax or invoke the calls manually:
+context manager syntax, or invoke the calls manually:
 
 ```python
 async with Fluke_5440B(connection=gpib_device) as fluke5440b:
