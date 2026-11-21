@@ -37,9 +37,7 @@
   <h1>Source code for fluke5440b_async.enums</h1><div class="highlight"><pre>
 <span></span><span class="sd">"""Enums are used to represent the device functions and settings."""</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">StrEnum</span>
 
 
 <div class="viewcode-block" id="ErrorCode">
@@ -166,7 +164,7 @@
 
 <div class="viewcode-block" id="ModeType">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.ModeType">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ModeType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ModeType</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The output modes. Voltage boost means a connected Fluke 5205A power amplifier and current boost means a connected</span>
 <span class="sd">    Fluke 5220A transconductance amplifier."""</span>
 
@@ -281,7 +279,7 @@
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
     </div>
   </body>
 </html>
