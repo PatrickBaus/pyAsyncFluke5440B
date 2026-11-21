@@ -485,7 +485,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command and test_error was set to True.
         """
-        if -1500 > value > 1500:
+        if not -1500 <= value <= 1500:
             raise ValueError("Value out of range")
         try:
             await self.write(f"SOUT {self.__limit_numeric(value)}", test_error)
@@ -596,7 +596,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if the limits are out of bounds.
         """
         value = Decimal(value)
-        if -1500 > value > 1500:
+        if not -1500 <= value <= 1500:
             raise ValueError("Value out of range.")
         if value2 is not None:
             value2 = Decimal(value2)
@@ -655,7 +655,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if the limits are out of bounds.
         """
         value = Decimal(value)
-        if -20 > value > 20:
+        if not -20 <= value <= 20:
             raise ValueError("Value out of range.")
         if value2 is not None:
             value2 = Decimal(value2)
