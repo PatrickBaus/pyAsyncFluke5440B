@@ -6,14 +6,13 @@ authors = [
 description = "A Python asyncio library for the Fluke 5440B voltage calibrator."
 readme = "README.md"
 license = { text="GNU General Public License v3 (GPLv3)" }
-requires-python = ">=3.7"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
@@ -25,9 +24,7 @@ classifiers = [
 ]
 keywords = ["Fluke 5440B", "GPIB", "API"]
 dynamic = ["version"]
-dependencies = [
-    "typing-extensions; python_version <'3.11'",
-]
+dependencies = []
 
 [project.urls]
 "Homepage" = "https://github.com/PatrickBaus/pyAsyncFluke5440B"
@@ -52,6 +49,9 @@ test = [
     "mypy", "pylint", "gpib-ctypes", "prologix-gpib-async", "setuptools",
 ]
 
+[tool.pylint.main]
+py-version = "3.12"
+
 [tool.pylint.'MESSAGES CONTROL']
 max-line-length = 120
 notes = ["FIXME", "XXX",]
@@ -62,11 +62,14 @@ profile = "black"
 
 [tool.black]
 line-length = 120
+target-version = ["py312"]
+
+[tool.mypy]
+python_version = "3.12"
 
 [build-system]
 requires = [
     "setuptools>=61.0",
-    "typing-extensions; python_version <'3.11'",
 ]
 build-backend = "setuptools.build_meta"
 

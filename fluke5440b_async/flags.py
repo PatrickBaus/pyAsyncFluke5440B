@@ -1,12 +1,13 @@
 """Flags are used for the status registers returned by the device."""
 
-from __future__ import annotations
-
-from enum import Flag
+from enum import KEEP, Flag
 
 
-class SerialPollFlags(Flag):
-    """The register returned by a serial poll."""
+class SerialPollFlags(Flag, boundary=KEEP):
+    """
+    The register returned by a serial poll. Undefined bits are kept instead of raising a ValueError, because the
+    instrument or the GPIB adapter may set them.
+    """
 
     NONE = 0b0
     DOING_STATE_CHANGE = 1 << 2
@@ -16,7 +17,7 @@ class SerialPollFlags(Flag):
     SRQ = 1 << 6
 
 
-class SrqMask(Flag):
+class SrqMask(Flag, boundary=KEEP):
     """The register to control the service request interrupts."""
 
     NONE = 0b0
@@ -26,7 +27,7 @@ class SrqMask(Flag):
     ERROR_CONDITION = 1 << 5
 
 
-class StatusFlags(Flag):
+class StatusFlags(Flag, boundary=KEEP):
     """The internal status register that holds the device configuration."""
 
     VOLTAGE_MODE = 1 << 0
