@@ -17,3 +17,17 @@ updates:
     commit-message:
       # Prefix all commit messages with "[pip] "
       prefix: "[pip] "
+
+  - package-ecosystem: "pre-commit"
+    # Reads .pre-commit-config.yaml and bumps each hook's `rev`
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      # Prefix all commit messages with "[pre-commit] "
+      prefix: "[pre-commit] "
+    groups:
+      # One PR for all hook updates instead of one per hook
+      pre-commit-hooks:
+        patterns:
+          - "*"
