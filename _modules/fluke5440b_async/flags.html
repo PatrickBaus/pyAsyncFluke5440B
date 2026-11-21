@@ -35,7 +35,7 @@
           <div class="body" role="main">
             
   <h1>Source code for fluke5440b_async.flags</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Flags are used for the status registers returned by the device.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Flags are used for the status registers returned by the device."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -45,7 +45,7 @@
 <div class="viewcode-block" id="SerialPollFlags">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.flags.SerialPollFlags">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SerialPollFlags</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The register returned by a serial poll.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The register returned by a serial poll."""</span>
 
     <span class="n">NONE</span> <span class="o">=</span> <span class="mb">0b0</span>
     <span class="n">DOING_STATE_CHANGE</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span>
@@ -59,7 +59,7 @@
 <div class="viewcode-block" id="SrqMask">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.flags.SrqMask">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SrqMask</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The register to control the service request interrupts.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The register to control the service request interrupts."""</span>
 
     <span class="n">NONE</span> <span class="o">=</span> <span class="mb">0b0</span>
     <span class="n">DOING_STATE_CHANGE</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span>
@@ -72,7 +72,7 @@
 <div class="viewcode-block" id="StatusFlags">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.flags.StatusFlags">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StatusFlags</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The internal status register that holds the device configuration.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The internal status register that holds the device configuration."""</span>
 
     <span class="n">VOLTAGE_MODE</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span>
     <span class="n">CURRENT_BOOST_MODE</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
@@ -121,7 +121,7 @@
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
     </div>
   </body>
 </html>

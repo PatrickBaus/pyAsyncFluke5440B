@@ -72,7 +72,7 @@ different hardware solutions.</p>
 <span class="c1"># along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
 <span class="c1">#</span>
 <span class="c1"># ##### END GPL LICENSE BLOCK #####</span>
-<span class="sd">&quot;&quot;&quot;This is a simple example that uses the Prologix Ethernet adapter to set the output voltage of the calibrator.&quot;&quot;&quot;</span>
+<span class="sd">"""This is a simple example that uses the Prologix Ethernet adapter to set the output voltage of the calibrator."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 
@@ -80,11 +80,11 @@ different hardware solutions.</p>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">fluke5440b_async</span><span class="w"> </span><span class="kn">import</span> <span class="n">Fluke_5440B</span>
 
-<span class="n">IP_ADDRESS</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span>
+<span class="n">IP_ADDRESS</span> <span class="o">=</span> <span class="s2">"127.0.0.1"</span>
 
 
 <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the output voltage and enable the outputs.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Set the output voltage and enable the outputs."""</span>
     <span class="c1"># No need to explicitly bring up the GPIB connection. This will be done by the instrument.</span>
     <span class="k">async</span> <span class="k">with</span> <span class="n">Fluke_5440B</span><span class="p">(</span>
         <span class="n">connection</span><span class="o">=</span><span class="n">AsyncPrologixGpibEthernetController</span><span class="p">(</span><span class="n">IP_ADDRESS</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">wait_delay</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
@@ -167,7 +167,7 @@ different hardware solutions.</p>
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
     </div>
   </body>
 </html>

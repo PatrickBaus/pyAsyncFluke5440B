@@ -35,7 +35,7 @@
           <div class="body" role="main">
             
   <h1>Source code for fluke5440b_async.enums</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Enums are used to represent the device functions and settings.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Enums are used to represent the device functions and settings."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -45,7 +45,7 @@
 <div class="viewcode-block" id="ErrorCode">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.ErrorCode">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The error codes used by the Fluke 5440B.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The error codes used by the Fluke 5440B."""</span>
 
     <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">BOOST_INTERFACE_CONNECTION_ERROR</span> <span class="o">=</span> <span class="mi">144</span>
@@ -73,7 +73,7 @@
 <div class="viewcode-block" id="SelfTestErrorCode">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.SelfTestErrorCode">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SelfTestErrorCode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The error codes thrown by the self-test routine. See page 4-8 of the service manual for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The error codes thrown by the self-test routine. See page 4-8 of the service manual for details."""</span>
 
     <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">POWER_SUPPLY_FAULT_TEST_UNGUARDED_POWER</span> <span class="o">=</span> <span class="mi">8</span>
@@ -166,19 +166,19 @@
 <div class="viewcode-block" id="ModeType">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.ModeType">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ModeType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The output modes. Voltage boost means a connected Fluke 5205A power amplifier and current boost means a connected</span>
-<span class="sd">    Fluke 5220A transconductance amplifier.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The output modes. Voltage boost means a connected Fluke 5205A power amplifier and current boost means a connected</span>
+<span class="sd">    Fluke 5220A transconductance amplifier."""</span>
 
-    <span class="n">NORMAL</span> <span class="o">=</span> <span class="s2">&quot;BSTO&quot;</span>
-    <span class="n">VOLTAGE_BOOST</span> <span class="o">=</span> <span class="s2">&quot;BSTV&quot;</span>
-    <span class="n">CURRENT_BOOST</span> <span class="o">=</span> <span class="s2">&quot;BSTC&quot;</span></div>
+    <span class="n">NORMAL</span> <span class="o">=</span> <span class="s2">"BSTO"</span>
+    <span class="n">VOLTAGE_BOOST</span> <span class="o">=</span> <span class="s2">"BSTV"</span>
+    <span class="n">CURRENT_BOOST</span> <span class="o">=</span> <span class="s2">"BSTC"</span></div>
 
 
 
 <div class="viewcode-block" id="SeparatorType">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.SeparatorType">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SeparatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The separator used to distinguish multiple return values.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The separator used to distinguish multiple return values."""</span>
 
     <span class="n">COMMA</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">COLON</span> <span class="o">=</span> <span class="mi">1</span></div>
@@ -188,7 +188,7 @@
 <div class="viewcode-block" id="DeviceState">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.DeviceState">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DeviceState</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The internal device state.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The internal device state."""</span>
 
     <span class="n">IDLE</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">CALIBRATING_ADC</span> <span class="o">=</span> <span class="mi">16</span>
@@ -234,7 +234,7 @@
 <div class="viewcode-block" id="TerminatorType">
 <a class="viewcode-back" href="../../modules.html#fluke5440b_async.enums.TerminatorType">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TerminatorType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The line terminator used by the instrument.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The line terminator used by the instrument."""</span>
 
     <span class="n">EOI</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">CR_LF_EOI</span> <span class="o">=</span> <span class="mi">1</span>
@@ -280,7 +280,7 @@
     </div>
     <div class="footer" role="contentinfo">
     &#169; Copyright 2023, Patrick Baus.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
     </div>
   </body>
 </html>
