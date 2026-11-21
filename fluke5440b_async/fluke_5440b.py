@@ -19,27 +19,24 @@
 This is an asyncIO driver for the Fluke 5440B voltage calibrator to abstract away the GPIB interface.
 """
 
-from __future__ import annotations
-
 import asyncio
+import itertools
 import logging
 from dataclasses import dataclass
 from decimal import ROUND_HALF_EVEN, Decimal
 from types import TracebackType
-from typing import TYPE_CHECKING, Type, cast
+from typing import TYPE_CHECKING, Self, cast, override
 
 from fluke5440b_async.enums import DeviceState, ErrorCode, ModeType, SelfTestErrorCode, SeparatorType, TerminatorType
 from fluke5440b_async.errors import DeviceError, SelftestError
 from fluke5440b_async.flags import SerialPollFlags, SrqMask, StatusFlags
 
-try:
-    from typing import Self  # type: ignore # Python 3.11
-except ImportError:
-    from typing_extensions import Self
-
 if TYPE_CHECKING:
     from async_gpib import AsyncGpib
     from prologix_gpib_async import AsyncPrologixGpibController
+
+# The value of a `type` alias is evaluated lazily, so the adapter libraries are only needed for type checking
+type GpibConnection = AsyncGpib | AsyncPrologixGpibController
 
 BAUD_RATES_AVAILABLE = (50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600)
 
@@ -59,7 +56,7 @@ def _decode_error(code: int) -> ErrorCode | SelfTestErrorCode | int:
         return code
 
 
-@dataclass
+@dataclass(slots=True)
 class CalibrationConstants:  # pylint: disable=too-many-instance-attributes
     """The calibration constants of the Fluke 5440B."""
 
@@ -85,6 +82,7 @@ class CalibrationConstants:  # pylint: disable=too-many-instance-attributes
     resolution_ratio: Decimal
     adc_gain: Decimal
 
+    @override
     def __str__(self) -> str:
         """Pretty-print the calibration constants."""
         return (
@@ -117,13 +115,13 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
     """
 
     @property
-    def connection(self) -> AsyncGpib | AsyncPrologixGpibController:
+    def connection(self) -> GpibConnection:
         """
         The GPIB connection.
         """
         return self.__conn
 
-    def __init__(self, connection: AsyncGpib | AsyncPrologixGpibController, log_level: int = logging.WARNING):
+    def __init__(self, connection: GpibConnection, log_level: int = logging.WARNING):
         """
         Create Fluke 5440B device with the GPIB connection given.
 
@@ -135,11 +133,12 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             The level of logging output. By default, only warnings or higher are output.
         """
         self.__conn = connection
-        self.__lock: asyncio.Lock | None = None
+        self.__lock = asyncio.Lock()
 
         self.__logger = logging.getLogger(__name__)
         self.__logger.setLevel(log_level)  # Only log really important messages by default
 
+    @override
     def __str__(self) -> str:
         return f"Fluke 5440B at {str(self.connection)}"
 
@@ -148,7 +147,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         return self
 
     async def __aexit__(
-        self, exc_type: Type[BaseException] | None, exc: BaseException | None, traceback: TracebackType | None
+        self, exc_type: type[BaseException] | None, exc: BaseException | None, traceback: TracebackType | None
     ) -> None:
         await self.disconnect()
 
@@ -179,8 +178,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         Connect the GPIB connection and configure the GPIB device for the DMM. This function must be called from the
         AsyncIO loop and takes care of connecting the GPIB adapter.
         """
-        self.__lock = asyncio.Lock()
-
         await self.__conn.connect()
         if hasattr(self.__conn, "set_eot"):
             # Used by the Prologix adapters
@@ -233,12 +230,10 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             If test_error is set to True and there was an error processing the command.
         """
-        assert isinstance(cmd, (str, bytes))
-        try:
-            cmd = cmd.encode("ascii")  # type: ignore[union-attr]
-        except AttributeError:
-            pass  # cmd is already a bytestring
-        assert isinstance(cmd, bytes)
+        if isinstance(cmd, str):
+            cmd = cmd.encode("ascii")
+        elif not isinstance(cmd, bytes):
+            raise TypeError(f"Command must be str or bytes, not {type(cmd).__name__}.")
         # The calibrator can only buffer 127 byte
         if len(cmd) > 127:
             raise ValueError("Command size must be 127 byte or less.")
@@ -309,7 +304,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command.
         """
-        assert self.__lock is not None
         async with self.__lock:
             # We do not send "RESET", because a DCL will do the same and additionally circumvents the input buffer
             await self.__conn.clear()
@@ -338,7 +332,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         TerminatorType
             The line terminator used by the device.
         """
-        assert self.__lock is not None
         async with self.__lock:
             result = await self.query("GTRM", test_error=True)
             try:
@@ -419,7 +412,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if there was an error processing the command.
         """
         assert isinstance(value, ModeType)
-        await self.write(f"{value.value}", test_error=True)
+        await self.write(value, test_error=True)
 
     async def set_output_enabled(self, enabled: bool) -> None:
         """
@@ -777,7 +770,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """Wait until the device requests service (RQS)"""
         try:
             await self.__conn.wait((1 << 11) | (1 << 14))  # Wait for RQS or TIMO
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self.__logger.warning(
                 "Timeout during wait. Is the IbaAUTOPOLL(0x7) bit set for the board? Or the timeout set too low?"
             )
@@ -821,7 +814,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command.
         """
-        assert self.__lock is not None
         async with self.__lock:
             await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each test step
             try:
@@ -861,7 +853,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command.
         """
-        assert self.__lock is not None
         async with self.__lock:
             await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each test step
             try:
@@ -901,7 +892,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command.
         """
-        assert self.__lock is not None
         async with self.__lock:
             await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each test step
             try:
@@ -949,7 +939,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         Run the internal calibration routine. It will take about 6.5 minutes during which the instrument hardware is
         blocked. See page 3-2 of the operator manual for details.
         """
-        assert self.__lock is not None
         async with self.__lock:
             await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each calibration step
             try:
@@ -998,13 +987,11 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         CalibrationConstants:
             A dataclass containing the constants as Decimals
         """
-        assert self.__lock is not None
         async with self.__lock:
             # We need to split the query in two parts, because the input buffer of the 5440B is only 127 byte
-            values = cast(list[str], await self.query(",".join(["GCAL " + str(i) for i in range(10)]), test_error=True))
-            values += cast(
-                list[str], await self.query(",".join(["GCAL " + str(i) for i in range(10, 20)]), test_error=True)
-            )
+            values: list[str] = []
+            for indices in itertools.batched(range(20), 10):
+                values += cast(list[str], await self.query(",".join(f"GCAL {i}" for i in indices), test_error=True))
             return CalibrationConstants(
                 gain_02V=Decimal(values[5]),
                 gain_2V=Decimal(values[4]),
@@ -1064,7 +1051,6 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         if value not in BAUD_RATES_AVAILABLE:
             raise ValueError(f"Invalid baud rate. It must be one of: {','.join(map(str, BAUD_RATES_AVAILABLE))}.")
-        assert self.__lock is not None
         async with self.__lock:
             self.__logger.info("Setting baud rate to %d and writing to NVRAM. This takes about 1.5 minutes.", value)
             try:

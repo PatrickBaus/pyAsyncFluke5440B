@@ -1,8 +1,6 @@
 """Enums are used to represent the device functions and settings."""
 
-from __future__ import annotations
-
-from enum import Enum
+from enum import Enum, StrEnum
 
 
 class ErrorCode(Enum):
@@ -121,7 +119,7 @@ class SelfTestErrorCode(Enum):
     USER_ENTRY_ERROR_INSTRUMENT_IS_BUSY = 175
 
 
-class ModeType(Enum):
+class ModeType(StrEnum):
     """The output modes. Voltage boost means a connected Fluke 5205A power amplifier and current boost means a connected
     Fluke 5220A transconductance amplifier."""
 
