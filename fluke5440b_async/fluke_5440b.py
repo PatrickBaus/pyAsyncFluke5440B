@@ -23,7 +23,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 from types import TracebackType
 from typing import TYPE_CHECKING, Type, cast
 
@@ -462,12 +462,17 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         str
             A formatted string of the number.
         """
-        result = f"{value:.8f}"
-        if abs(value) >= 1:  # type: ignore[operator]
-            # There are significant digits before the decimal point, so we need to limit the length of the string
-            # to 9 characters (decimal point + 8 significant digits)
-            result = f"{result:.9s}"
-        return result
+        # Convert floats via str() to avoid binary representation artifacts, e.g. 0.1 -> 0.1000000000000000055...
+        number = Decimal(str(value)) if isinstance(value, float) else Decimal(value)
+        if number == 0:
+            return "0"
+        # Round (not truncate) to 8 significant digits, but never finer than 10 nV (1e-8).
+        exponent = max(number.adjusted() - 7, -8)
+        result = number.quantize(Decimal(1).scaleb(exponent), rounding=ROUND_HALF_EVEN)
+        if result.adjusted() > number.adjusted():
+            # Rounding carried into a new digit (e.g. 9.99999999 -> 10.0000000), so drop one more decimal place
+            result = number.quantize(Decimal(1).scaleb(exponent + 1), rounding=ROUND_HALF_EVEN)
+        return f"{result:f}"
 
     async def set_output(self, value: int | float | Decimal, test_error: bool = True) -> None:
         """
