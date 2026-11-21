@@ -18,6 +18,7 @@
 """
 This is an asyncIO driver for the Fluke 5440B voltage calibrator to abstract away the GPIB interface.
 """
+
 from __future__ import annotations
 
 import asyncio
