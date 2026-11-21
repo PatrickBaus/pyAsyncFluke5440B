@@ -573,13 +573,13 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         await self.write("DIVY" if enabled else "DIVN", test_error=True)
 
-    async def get_voltage_limit(self) -> tuple[Decimal, Decimal]:
+    async def get_voltage_limit(self) -> Decimal | tuple[Decimal, Decimal]:
         """
         Get the voltage limit set on the instrument. It will raise an error, when in current boost mode.
         Returns
         -------
-        tuple of Decimal
-            The positive and negative limit
+        Decimal or tuple of Decimal
+            The positive and negative limit, or a single value if the instrument only returns one limit
 
         Raises
         ------
@@ -588,7 +588,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         # TODO: Needs testing for error when in current boost mode
         result = await self.query("GVLM", test_error=True)
-        return Decimal(result[1]), Decimal(result[0])
+        if isinstance(result, list):
+            return Decimal(result[1]), Decimal(result[0])
+        return Decimal(result)
 
     async def set_voltage_limit(
         self, value: int | float | Decimal, value2: int | float | Decimal | None = None
