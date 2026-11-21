@@ -23,7 +23,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_EVEN, Decimal
 from types import TracebackType
 from typing import TYPE_CHECKING, Type, cast
 
@@ -41,6 +41,21 @@ if TYPE_CHECKING:
     from prologix_gpib_async import AsyncPrologixGpibController
 
 BAUD_RATES_AVAILABLE = (50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600)
+
+
+def _decode_error(code: int) -> ErrorCode | SelfTestErrorCode | int:
+    """
+    Convert an error number returned by the instrument to an enum. Command errors are looked up first, then
+    self-test/calibration faults. Unknown codes are returned as a plain int, so that the original error is never lost.
+    """
+    try:
+        return ErrorCode(code)
+    except ValueError:
+        pass
+    try:
+        return SelfTestErrorCode(code)
+    except ValueError:
+        return code
 
 
 @dataclass
@@ -178,12 +193,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                 status = await self.serial_poll()
 
             if status & SerialPollFlags.ERROR_CONDITION:
-                err = await self.get_error()  # clear error flags not produced by us
-                error: ErrorCode | SelfTestErrorCode
-                try:
-                    error = ErrorCode(err)
-                except ValueError:
-                    error = SelfTestErrorCode(err)
+                error = _decode_error(await self.get_error())  # clear error flags not produced by us
                 self.__logger.debug("Calibrator errors at boot: %s.", error)
             state = await self.get_state()
             self.__logger.debug("Calibrator state at boot: %s.", state)
@@ -243,7 +253,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                     # The command did return some msg, so we need to read that first (and drop it)
                     msg = await self.read()
 
-                err = ErrorCode(await self.get_error())
+                err = _decode_error(await self.get_error())
                 if msg is None:
                     raise DeviceError(f"Device error on command: {cmd.decode('utf-8')}, code: {err}", err)
                 raise DeviceError(
@@ -462,12 +472,17 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         str
             A formatted string of the number.
         """
-        result = f"{value:.8f}"
-        if abs(value) >= 1:  # type: ignore[operator]
-            # There are significant digits before the decimal point, so we need to limit the length of the string
-            # to 9 characters (decimal point + 8 significant digits)
-            result = f"{result:.9s}"
-        return result
+        # Convert floats via str() to avoid binary representation artifacts, e.g. 0.1 -> 0.1000000000000000055...
+        number = Decimal(str(value)) if isinstance(value, float) else Decimal(value)
+        if number == 0:
+            return "0"
+        # Round (not truncate) to 8 significant digits, but never finer than 10 nV (1e-8).
+        exponent = max(number.adjusted() - 7, -8)
+        result = number.quantize(Decimal(1).scaleb(exponent), rounding=ROUND_HALF_EVEN)
+        if result.adjusted() > number.adjusted():
+            # Rounding carried into a new digit (e.g. 9.99999999 -> 10.0000000), so drop one more decimal place
+            result = number.quantize(Decimal(1).scaleb(exponent + 1), rounding=ROUND_HALF_EVEN)
+        return f"{result:f}"
 
     async def set_output(self, value: int | float | Decimal, test_error: bool = True) -> None:
         """
@@ -485,7 +500,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command and test_error was set to True.
         """
-        if -1500 > value > 1500:
+        if not -1500 <= value <= 1500:
             raise ValueError("Value out of range")
         try:
             await self.write(f"SOUT {self.__limit_numeric(value)}", test_error)
@@ -558,13 +573,13 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         await self.write("DIVY" if enabled else "DIVN", test_error=True)
 
-    async def get_voltage_limit(self) -> tuple[Decimal, Decimal]:
+    async def get_voltage_limit(self) -> Decimal | tuple[Decimal, Decimal]:
         """
         Get the voltage limit set on the instrument. It will raise an error, when in current boost mode.
         Returns
         -------
-        tuple of Decimal
-            The positive and negative limit
+        Decimal or tuple of Decimal
+            The positive and negative limit, or a single value if the instrument only returns one limit
 
         Raises
         ------
@@ -573,7 +588,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         # TODO: Needs testing for error when in current boost mode
         result = await self.query("GVLM", test_error=True)
-        return Decimal(result[1]), Decimal(result[0])
+        if isinstance(result, list):
+            return Decimal(result[1]), Decimal(result[0])
+        return Decimal(result)
 
     async def set_voltage_limit(
         self, value: int | float | Decimal, value2: int | float | Decimal | None = None
@@ -596,7 +613,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if the limits are out of bounds.
         """
         value = Decimal(value)
-        if -1500 > value > 1500:
+        if not -1500 <= value <= 1500:
             raise ValueError("Value out of range.")
         if value2 is not None:
             value2 = Decimal(value2)
@@ -655,7 +672,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if the limits are out of bounds.
         """
         value = Decimal(value)
-        if -20 > value > 20:
+        if not -20 <= value <= 20:
             raise ValueError("Value out of range.")
         if value2 is not None:
             value2 = Decimal(value2)
@@ -772,7 +789,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             # If there was an error during waiting, raise it.
             # I have seen GPIB_HANDSHAKE_ERRORs with a prologix adapter, which does a lot of polling during wait.
             # Ignore that error for now.
-            err = ErrorCode(await self.get_error())
+            err = _decode_error(await self.get_error())
             if err is ErrorCode.GPIB_HANDSHAKE_ERROR:
                 self.__logger.info(
                     "Got error during waiting: %s. "
