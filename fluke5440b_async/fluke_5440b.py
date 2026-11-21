@@ -43,6 +43,21 @@ if TYPE_CHECKING:
 BAUD_RATES_AVAILABLE = (50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600)
 
 
+def _decode_error(code: int) -> ErrorCode | SelfTestErrorCode | int:
+    """
+    Convert an error number returned by the instrument to an enum. Command errors are looked up first, then
+    self-test/calibration faults. Unknown codes are returned as a plain int, so that the original error is never lost.
+    """
+    try:
+        return ErrorCode(code)
+    except ValueError:
+        pass
+    try:
+        return SelfTestErrorCode(code)
+    except ValueError:
+        return code
+
+
 @dataclass
 class CalibrationConstants:  # pylint: disable=too-many-instance-attributes
     """The calibration constants of the Fluke 5440B."""
@@ -178,12 +193,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                 status = await self.serial_poll()
 
             if status & SerialPollFlags.ERROR_CONDITION:
-                err = await self.get_error()  # clear error flags not produced by us
-                error: ErrorCode | SelfTestErrorCode
-                try:
-                    error = ErrorCode(err)
-                except ValueError:
-                    error = SelfTestErrorCode(err)
+                error = _decode_error(await self.get_error())  # clear error flags not produced by us
                 self.__logger.debug("Calibrator errors at boot: %s.", error)
             state = await self.get_state()
             self.__logger.debug("Calibrator state at boot: %s.", state)
@@ -243,7 +253,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                     # The command did return some msg, so we need to read that first (and drop it)
                     msg = await self.read()
 
-                err = ErrorCode(await self.get_error())
+                err = _decode_error(await self.get_error())
                 if msg is None:
                     raise DeviceError(f"Device error on command: {cmd.decode('utf-8')}, code: {err}", err)
                 raise DeviceError(
@@ -777,7 +787,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             # If there was an error during waiting, raise it.
             # I have seen GPIB_HANDSHAKE_ERRORs with a prologix adapter, which does a lot of polling during wait.
             # Ignore that error for now.
-            err = ErrorCode(await self.get_error())
+            err = _decode_error(await self.get_error())
             if err is ErrorCode.GPIB_HANDSHAKE_ERROR:
                 self.__logger.info(
                     "Got error during waiting: %s. "

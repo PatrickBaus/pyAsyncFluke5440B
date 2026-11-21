@@ -1,5 +1,7 @@
 """Custom errors raised by the Fluke 5440B."""
 
+from __future__ import annotations
+
 from .enums import ErrorCode, SelfTestErrorCode
 
 
@@ -10,7 +12,7 @@ class Fluke5440bError(Exception):
 class DeviceError(Fluke5440bError):
     """The device returned an error during operation."""
 
-    def __init__(self, message: str, error_code: ErrorCode):
+    def __init__(self, message: str, error_code: ErrorCode | SelfTestErrorCode | int):
         super().__init__(message)
 
         self.code = error_code
