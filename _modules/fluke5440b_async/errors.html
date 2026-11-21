@@ -37,6 +37,8 @@
   <h1>Source code for fluke5440b_async.errors</h1><div class="highlight"><pre>
 <span></span><span class="sd">"""Custom errors raised by the Fluke 5440B."""</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">ErrorCode</span><span class="p">,</span> <span class="n">SelfTestErrorCode</span>
 
 
@@ -52,7 +54,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">DeviceError</span><span class="p">(</span><span class="n">Fluke5440bError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The device returned an error during operation."""</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">error_code</span><span class="p">:</span> <span class="n">ErrorCode</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">error_code</span><span class="p">:</span> <span class="n">ErrorCode</span> <span class="o">|</span> <span class="n">SelfTestErrorCode</span> <span class="o">|</span> <span class="nb">int</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">error_code</span></div>

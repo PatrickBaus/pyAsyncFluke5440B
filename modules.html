@@ -230,10 +230,10 @@ mode, or the state of the external sense connection, etc.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fluke5440b_async.Fluke_5440B.get_voltage_limit">
-<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_voltage_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Decimal</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Decimal</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.get_voltage_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.get_voltage_limit" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">get_voltage_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Decimal</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Decimal</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Decimal</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.get_voltage_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.get_voltage_limit" title="Link to this definition">¶</a></dt>
 <dd><p>Get the voltage limit set on the instrument. It will raise an error, when in current boost mode.
-:returns: The positive and negative limit
-:rtype: tuple of Decimal</p>
+:returns: The positive and negative limit, or a single value if the instrument only returns one limit
+:rtype: Decimal or tuple of Decimal</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#fluke5440b_async.errors.DeviceError" title="fluke5440b_async.errors.DeviceError"><strong>DeviceError</strong></a> – Raised if there was an error processing the command.</p>
@@ -991,6 +991,11 @@ device is triggered.
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="fluke5440b_async.enums.ErrorCode.CAL_SWITCH_LOCKED">
+<span class="sig-name descname"><span class="pre">CAL_SWITCH_LOCKED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">174</span></span><a class="headerlink" href="#fluke5440b_async.enums.ErrorCode.CAL_SWITCH_LOCKED" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="fluke5440b_async.enums.ErrorCode.DIVIDER_OUT_OF_RANGE">
 <span class="sig-name descname"><span class="pre">DIVIDER_OUT_OF_RANGE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">171</span></span><a class="headerlink" href="#fluke5440b_async.enums.ErrorCode.DIVIDER_OUT_OF_RANGE" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -1573,7 +1578,7 @@ Fluke 5220A transconductance amplifier.</p>
 <p>Custom errors raised by the Fluke 5440B.</p>
 <dl class="py exception">
 <dt class="sig sig-object py" id="fluke5440b_async.errors.DeviceError">
-<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fluke5440b_async.errors.</span></span><span class="sig-name descname"><span class="pre">DeviceError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode" title="fluke5440b_async.enums.ErrorCode"><span class="pre">ErrorCode</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluke5440b_async/errors.html#DeviceError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.errors.DeviceError" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fluke5440b_async.errors.</span></span><span class="sig-name descname"><span class="pre">DeviceError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode" title="fluke5440b_async.enums.ErrorCode"><span class="pre">ErrorCode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#fluke5440b_async.enums.SelfTestErrorCode" title="fluke5440b_async.enums.SelfTestErrorCode"><span class="pre">SelfTestErrorCode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluke5440b_async/errors.html#DeviceError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.errors.DeviceError" title="Link to this definition">¶</a></dt>
 <dd><p>The device returned an error during operation.</p>
 </dd></dl>
 
@@ -1750,6 +1755,7 @@ Fluke 5220A transconductance amplifier.</p>
 <li><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode.BOOST_INTERFACE_MISSING"><code class="docutils literal notranslate"><span class="pre">ErrorCode.BOOST_INTERFACE_MISSING</span></code></a></li>
 <li><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode.BOOST_INTERFACE_VOLTAGE_TRIP"><code class="docutils literal notranslate"><span class="pre">ErrorCode.BOOST_INTERFACE_VOLTAGE_TRIP</span></code></a></li>
 <li><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode.BUFFER_OVERFLOW"><code class="docutils literal notranslate"><span class="pre">ErrorCode.BUFFER_OVERFLOW</span></code></a></li>
+<li><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode.CAL_SWITCH_LOCKED"><code class="docutils literal notranslate"><span class="pre">ErrorCode.CAL_SWITCH_LOCKED</span></code></a></li>
 <li><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode.DIVIDER_OUT_OF_RANGE"><code class="docutils literal notranslate"><span class="pre">ErrorCode.DIVIDER_OUT_OF_RANGE</span></code></a></li>
 <li><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode.GPIB_HANDSHAKE_ERROR"><code class="docutils literal notranslate"><span class="pre">ErrorCode.GPIB_HANDSHAKE_ERROR</span></code></a></li>
 <li><a class="reference internal" href="#fluke5440b_async.enums.ErrorCode.INVALID_CHARACTER"><code class="docutils literal notranslate"><span class="pre">ErrorCode.INVALID_CHARACTER</span></code></a></li>
