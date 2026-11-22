@@ -74,6 +74,8 @@ relative_files = true
 
 [tool.coverage.report]
 show_missing = true
+# Every line and branch of the library must be covered by the tests
+fail_under = 100
 
 [tool.pylint.main]
 py-version = "3.12"
