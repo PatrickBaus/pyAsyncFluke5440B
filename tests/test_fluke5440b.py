@@ -609,3 +609,28 @@ def test_invalid_integer_reply(method: str, header: str, reply: str) -> None:
 
     with pytest.raises(ValueError, match="Invalid reply received"):
         run(conn, scenario)
+
+
+def test_concurrent_queries() -> None:
+    """Queries from concurrent tasks must not read the replies of each other."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> list[Any]:
+        # A query without the error check takes fewer steps, so without a lock its read would overtake the others
+        return await asyncio.gather(*(coro for _ in range(5) for coro in (device.get_id(), device.query("GOUT"))))
+
+    results = run(conn, scenario)
+    assert results == [("Fluke", "5440B", "0", "1.08"), "1.5"] * 5
+
+
+def test_concurrent_errors() -> None:
+    """An error must be reported to the task that sent the failing command, not to a concurrent task."""
+    conn = FakeConnection()
+    conn.error_on = {"FOO": ErrorCode.UNKNOWN_COMMAND.value}
+
+    async def scenario(device: Fluke_5440B) -> tuple[None | BaseException, Decimal | BaseException]:
+        return await asyncio.gather(device.write("FOO", test_error=True), device.get_output(), return_exceptions=True)
+
+    failing, output = run(conn, scenario)
+    assert isinstance(failing, DeviceError) and failing.code is ErrorCode.UNKNOWN_COMMAND
+    assert output == Decimal("1.5")

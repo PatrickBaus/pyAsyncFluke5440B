@@ -66,6 +66,36 @@ def _parse_int(result: str | list[str]) -> int:
         raise ValueError(f"Invalid reply received. Expected an integer, but received: {result}") from None
 
 
+class _ReentrantLock:
+    """
+    An asyncio lock, that can be acquired again by the task already holding it. This allows the multistep sequences
+    (self-tests, ACAL, ...) to hold the lock while calling :func:`Fluke_5440B.write` and :func:`Fluke_5440B.query`,
+    which lock as well.
+    """
+
+    def __init__(self) -> None:
+        self.__lock = asyncio.Lock()
+        self.__owner: asyncio.Task | None = None
+        self.__depth = 0
+
+    async def __aenter__(self) -> None:
+        task = asyncio.current_task()
+        if self.__owner is not None and self.__owner is task:
+            self.__depth += 1
+            return
+        await self.__lock.acquire()
+        self.__owner = task
+        self.__depth = 1
+
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        self.__depth -= 1
+        if self.__depth == 0:
+            self.__owner = None
+            self.__lock.release()
+
+
 @dataclass(slots=True)
 class CalibrationConstants:  # pylint: disable=too-many-instance-attributes
     """The calibration constants of the Fluke 5440B."""
@@ -143,7 +173,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             The level of logging output. By default, only warnings or higher are output.
         """
         self.__conn = connection
-        self.__lock = asyncio.Lock()
+        self.__lock = _ReentrantLock()
 
         self.__logger = logging.getLogger(__name__)
         self.__logger.setLevel(log_level)  # Only log really important messages by default
@@ -248,23 +278,27 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         if len(cmd) > 127:
             raise ValueError("Command size must be 127 byte or less.")
 
-        await self.__conn.write(cmd)
-        if test_error:
-            await asyncio.sleep(0.2)  # The instrument is slow in parsing commands
-            spoll = await self.serial_poll()
-            if spoll & SerialPollFlags.ERROR_CONDITION:
-                self.__logger.debug("Received error while writing command %s. Serial poll register: %s.", cmd, spoll)
-                msg = None
-                if spoll & SerialPollFlags.MSG_RDY:
-                    # The command did return some msg, so we need to read that first (and drop it)
-                    msg = await self.read()
+        # Hold the lock, so that the error check below cannot be interleaved with commands from other tasks
+        async with self.__lock:
+            await self.__conn.write(cmd)
+            if test_error:
+                await asyncio.sleep(0.2)  # The instrument is slow in parsing commands
+                spoll = await self.serial_poll()
+                if spoll & SerialPollFlags.ERROR_CONDITION:
+                    self.__logger.debug(
+                        "Received error while writing command %s. Serial poll register: %s.", cmd, spoll
+                    )
+                    msg = None
+                    if spoll & SerialPollFlags.MSG_RDY:
+                        # The command did return some msg, so we need to read that first (and drop it)
+                        msg = await self.read()
 
-                err = _decode_error(await self.get_error())
-                if msg is None:
-                    raise DeviceError(f"Device error on command: {cmd.decode('utf-8')}, code: {err}", err)
-                raise DeviceError(
-                    f"Device error on command: {cmd.decode('utf-8')}, code: {err}, Message returned: {msg}", err
-                )
+                    err = _decode_error(await self.get_error())
+                    if msg is None:
+                        raise DeviceError(f"Device error on command: {cmd.decode('utf-8')}, code: {err}", err)
+                    raise DeviceError(
+                        f"Device error on command: {cmd.decode('utf-8')}, code: {err}, Message returned: {msg}", err
+                    )
 
     async def read(self) -> str | list[str]:
         """
@@ -298,8 +332,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             If test_error is set to True and there was an error processing the command.
         """
-        await self.write(cmd, test_error)
-        return await self.read()
+        async with self.__lock:  # make sure no other task reads our reply
+            await self.write(cmd, test_error)
+            return await self.read()
 
     async def __wait_for_state_change(self) -> None:
         while (await self.serial_poll()) & SerialPollFlags.DOING_STATE_CHANGE:
