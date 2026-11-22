@@ -848,6 +848,53 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             await self.__wait_for_rqs()
             state = await self.get_state()
 
+    async def __run_selftest(self, name: str, command: str, duration: str, states: tuple[DeviceState, ...]) -> None:
+        """
+        Run a self-test and follow its state changes until the instrument is idle again.
+
+        Parameters
+        ----------
+        name: str
+            The name of the self-test used in the log messages and errors, e.g. "digital"
+        command: str
+            The command starting the self-test
+        duration: str
+            The approximate duration of the self-test for the log message, e.g. "5 seconds"
+        states: tuple of DeviceState
+            The states the instrument passes through during the self-test. Other states are logged as a warning.
+
+        Raises
+        ------
+        SelftestError
+            Raised if the instrument reports a fault.
+        DeviceError
+            Raised if there was an error processing the command.
+        """
+        title = name[0].upper() + name[1:]
+        async with self.__lock:
+            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each test step
+            try:
+                self.__logger.info("Running %s self-test. This takes about %s.", name, duration)
+                await self.__wait_for_idle()
+
+                await self.write(command, test_error=True)
+                while "testing":
+                    status = await self.__wait_for_rqs(raise_error=False)
+                    if status & SerialPollFlags.ERROR_CONDITION:
+                        error_code = await self.get_error()
+                        raise SelftestError(title, _decode_selftest_error(error_code))
+                    if status & SerialPollFlags.DOING_STATE_CHANGE:
+                        state = await self.get_state()
+                        if state not in (DeviceState.IDLE, *states):
+                            self.__logger.warning("%s self-test failed. Invalid state: %s.", title, state)
+
+                        if state == DeviceState.IDLE:
+                            break
+                        self.__logger.info("Self-test status: %s.", state)
+                self.__logger.info("%s self-test passed.", title)
+            finally:
+                await self.set_srq_mask(SrqMask.NONE)  # Disable SRQs
+
     async def selftest_digital(self) -> None:
         """
         Test the main CPU, the front panel CPU and the guard CPU. It will take about 5 seconds during which the
@@ -858,34 +905,12 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command.
         """
-        async with self.__lock:
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each test step
-            try:
-                self.__logger.info("Running digital self-test. This takes about 5 seconds.")
-                await self.__wait_for_idle()
-
-                await self.write("TSTD", test_error=True)
-                while "testing":
-                    status = await self.__wait_for_rqs(raise_error=False)
-                    if status & SerialPollFlags.ERROR_CONDITION:
-                        error_code = await self.get_error()
-                        raise SelftestError("Digital", _decode_selftest_error(error_code))
-                    if status & SerialPollFlags.DOING_STATE_CHANGE:
-                        state = await self.get_state()
-                        if state not in (
-                            DeviceState.IDLE,
-                            DeviceState.SELF_TEST_MAIN_CPU,
-                            DeviceState.SELF_TEST_FRONTPANEL_CPU,
-                            DeviceState.SELF_TEST_GUARD_CPU,
-                        ):
-                            self.__logger.warning("Digital self-test failed. Invalid state: %s.", state)
-
-                        if state == DeviceState.IDLE:
-                            break
-                        self.__logger.info("Self-test status: %s.", state)
-                self.__logger.info("Digital self-test passed.")
-            finally:
-                await self.set_srq_mask(SrqMask.NONE)  # Disable SRQs
+        await self.__run_selftest(
+            "digital",
+            "TSTD",
+            "5 seconds",
+            (DeviceState.SELF_TEST_MAIN_CPU, DeviceState.SELF_TEST_FRONTPANEL_CPU, DeviceState.SELF_TEST_GUARD_CPU),
+        )
 
     async def selftest_analog(self) -> None:
         """
@@ -897,34 +922,12 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command.
         """
-        async with self.__lock:
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each test step
-            try:
-                self.__logger.info("Running analog self-test. This takes about 4 minutes.")
-                await self.__wait_for_idle()
-
-                await self.write("TSTA", test_error=True)
-                while "testing":
-                    status = await self.__wait_for_rqs(raise_error=False)
-                    if status & SerialPollFlags.ERROR_CONDITION:
-                        error_code = await self.get_error()
-                        raise SelftestError("Analog", _decode_selftest_error(error_code))
-                    if status & SerialPollFlags.DOING_STATE_CHANGE:
-                        state = await self.get_state()
-                        if state not in (
-                            DeviceState.IDLE,
-                            DeviceState.CALIBRATING_ADC,
-                            DeviceState.SELF_TEST_LOW_VOLTAGE,
-                            DeviceState.SELF_TEST_OVEN,
-                        ):
-                            self.__logger.warning("Analog self-test failed. Invalid state: %s.", state)
-
-                        if state == DeviceState.IDLE:
-                            break
-                        self.__logger.info("Self-test status: %s.", state)
-                self.__logger.info("Analog self-test passed.")
-            finally:
-                await self.set_srq_mask(SrqMask.NONE)  # Disable SRQs
+        await self.__run_selftest(
+            "analog",
+            "TSTA",
+            "4 minutes",
+            (DeviceState.CALIBRATING_ADC, DeviceState.SELF_TEST_LOW_VOLTAGE, DeviceState.SELF_TEST_OVEN),
+        )
 
     async def selftest_hv(self) -> None:
         """
@@ -936,33 +939,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             Raised if there was an error processing the command.
         """
-        async with self.__lock:
-            await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each test step
-            try:
-                self.__logger.info("Running high voltage self-test. This takes about 1 minute.")
-                await self.__wait_for_idle()
-
-                await self.write("TSTH", test_error=True)
-                while "testing":
-                    status = await self.__wait_for_rqs(raise_error=False)
-                    if status & SerialPollFlags.ERROR_CONDITION:
-                        error_code = await self.get_error()
-                        raise SelftestError("High voltage", _decode_selftest_error(error_code))
-                    if status & SerialPollFlags.DOING_STATE_CHANGE:
-                        state = await self.get_state()
-                        if state not in (
-                            DeviceState.IDLE,
-                            DeviceState.CALIBRATING_ADC,
-                            DeviceState.SELF_TEST_HIGH_VOLTAGE,
-                        ):
-                            self.__logger.warning("High voltage self-test failed. Invalid state: %s.", state)
-
-                        if state == DeviceState.IDLE:
-                            break
-                        self.__logger.info("Self-test status: %s.", state)
-                self.__logger.info("High voltage self-test passed.")
-            finally:
-                await self.set_srq_mask(SrqMask.NONE)  # Disable SRQs
+        await self.__run_selftest(
+            "high voltage", "TSTH", "1 minute", (DeviceState.CALIBRATING_ADC, DeviceState.SELF_TEST_HIGH_VOLTAGE)
+        )
 
     async def selftest_all(self) -> None:
         """
