@@ -1,4 +1,5 @@
-[![pylint](../../actions/workflows/pylint.yml/badge.svg)](../../actions/workflows/pylint.yml)
+[![pylint](https://github.com/PatrickBaus/pyAsyncFluke5440B/actions/workflows/pylint.yml/badge.svg)](https://github.com/PatrickBaus/pyAsyncFluke5440B/actions/workflows/pylint.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/PatrickBaus/pyAsyncFluke5440B/python-coverage-comment-action-data/endpoint.json)](https://github.com/PatrickBaus/pyAsyncFluke5440B/tree/python-coverage-comment-action-data)
 [![PyPI](https://img.shields.io/pypi/v/fluke5440b_async)](https://pypi.org/project/fluke5440b_async/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/fluke5440b_async)
 ![PyPI - Status](https://img.shields.io/pypi/status/fluke5440b_async)

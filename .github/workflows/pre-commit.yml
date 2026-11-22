@@ -1,26 +1,42 @@
 name: pre-commit
 
 on:
+  push:
+    branches: [ "master" ]
   pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: [ "3.15" ]
+    permissions:
+      contents: read
 
     steps:
-    - name: Checkout source repository
-      uses: actions/checkout@v7
-    - name: Set up python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies for testing
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install .[test]
-    - name: Run pre-commit
-      uses: pre-commit/action@v3.0.1
+      - name: Checkout source repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.15"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies for linting
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install .[lint]
+      - name: Cache the pre-commit environments
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Run pre-commit
+        run: |
+          pre-commit run --all-files --show-diff-on-failure --color=always
