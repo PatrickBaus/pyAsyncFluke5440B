@@ -27,6 +27,7 @@ import warnings
 
 # Devices
 from fluke5440b_async import Fluke_5440B
+from fluke5440b_async.fluke_5440b import GpibConnection
 
 if typing.TYPE_CHECKING:
     from async_gpib import AsyncGpib
@@ -42,7 +43,7 @@ if "prologix_gpib_async" in sys.modules:
     IP_ADDRESS = "127.0.0.1"
     # Set the timeout to 300 seconds, State.SELF_TEST_LOW_VOLTAGE takes a little more than 3 minutes.
     # pylint: disable=used-before-assignment  # false positive
-    gpib_device = AsyncPrologixGpibEthernetController(
+    gpib_device: GpibConnection = AsyncPrologixGpibEthernetController(
         IP_ADDRESS, pad=7, timeout=300, wait_delay=0.25
     )  # Prologix GPIB Adapter
 elif "async_gpib" in sys.modules:
@@ -57,7 +58,7 @@ else:
     raise ModuleNotFoundError("No GPIB library loaded.")
 
 
-async def main():
+async def main() -> None:
     """Set the output voltage and enable the outputs."""
     # No need to explicitly bring up the GPIB connection. This will be done by the instrument.
     async with Fluke_5440B(connection=gpib_device, log_level=logging.DEBUG) as fluke5440b:

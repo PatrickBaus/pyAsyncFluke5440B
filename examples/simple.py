@@ -28,7 +28,7 @@ from fluke5440b_async import Fluke_5440B
 IP_ADDRESS = "127.0.0.1"
 
 
-async def main():
+async def main() -> None:
     """Set the output voltage and enable the outputs."""
     # No need to explicitly bring up the GPIB connection. This will be done by the instrument.
     async with Fluke_5440B(

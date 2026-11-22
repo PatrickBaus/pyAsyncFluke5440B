@@ -40,4 +40,5 @@ repos:
     rev: 'v2.4.1'
     hooks:
     -   id: mypy
-        additional_dependencies: [types-simplejson]
+        # Strict mode checks the calls to the GPIB adapters and the tests, so mypy needs their type hints
+        additional_dependencies: [async-gpib, prologix-gpib-async, pytest, types-simplejson]
