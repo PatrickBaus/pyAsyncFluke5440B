@@ -8,8 +8,8 @@
 | fluke5440b\_async/enums.py        |      161 |        0 |        0 |        0 |     100% |           |
 | fluke5440b\_async/errors.py       |       10 |        0 |        0 |        0 |     100% |           |
 | fluke5440b\_async/flags.py        |       23 |        0 |        0 |        0 |     100% |           |
-| fluke5440b\_async/fluke\_5440b.py |      402 |        0 |      112 |        0 |     100% |           |
-| **TOTAL**                         |  **601** |    **0** |  **112** |    **0** | **100%** |           |
+| fluke5440b\_async/fluke\_5440b.py |      396 |        0 |      108 |        0 |     100% |           |
+| **TOTAL**                         |  **595** |    **0** |  **108** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge
