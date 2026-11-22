@@ -52,7 +52,9 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
         self.output_buffer: list[bytes] = []
         self.error_on: dict[str, int] = {}  # Command prefix -> error code raised by the instrument
         self.error = 0
-        self.states: list[int] = []  # States returned by GDNG, IDLE once empty
+        self.states: list[int] = []  # States returned by GDNG, default_state once empty
+        self.default_state = DeviceState.IDLE.value  # Set to another state to simulate a hung instrument
+        self.raise_on: dict[str, BaseException] = {}  # Command prefix -> exception raised by the GPIB adapter
         self.state_change = False
         self.extra_status = 0  # Additional bits returned by the serial poll
         self.error_during_wait: int | None = None  # Error raised by the instrument while a long job is running
@@ -80,6 +82,9 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
 
     async def write(self, msg: bytes) -> None:
         await asyncio.sleep(0)  # Let other tasks run, like a real connection would
+        for prefix, exception in self.raise_on.items():
+            if msg.startswith(prefix.encode("ascii")):
+                raise exception
         self.written.append(msg)
         replies = []
         for cmd in msg.decode("ascii").split(","):
@@ -93,7 +98,7 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
                 replies.append(str(self.error))
                 self.error = 0
             elif header == "GDNG":
-                replies.append(str(self.states.pop(0) if self.states else DeviceState.IDLE.value))
+                replies.append(str(self.states.pop(0) if self.states else self.default_state))
             elif header == "GCAL":
                 replies.append(str(int(cmd.split(" ")[1]) + 1))  # GCAL i returns i+1 to check the order
             elif header in self.replies:
@@ -318,11 +323,21 @@ def test_set_output_rounds_to_8_digits(value: int | float | Decimal, command: st
     assert conn.commands[-1] == command
 
 
-def test_set_output_below_resolution() -> None:
-    """Values below the 10 nV resolution are rounded to zero."""
+@pytest.mark.parametrize(
+    "value, command",
+    [
+        (1e-9, "SOUT 0"),
+        (-1e-9, "SOUT 0"),
+        (5e-9, "SOUT 0"),  # Rounded half to even
+        (6e-9, "SOUT 0.00000001"),
+        (-6e-9, "SOUT -0.00000001"),
+    ],
+)
+def test_set_output_below_resolution(value: float, command: str) -> None:
+    """Values below the 10 nV resolution are rounded to zero and sent like an exact zero."""
     conn = FakeConnection()
-    run(conn, lambda device: device.set_output(1e-9))
-    assert Decimal(conn.commands[-1].removeprefix("SOUT ")) == 0
+    run(conn, lambda device: device.set_output(value))
+    assert conn.commands[-1] == command
 
 
 @pytest.mark.parametrize("value", [1500.1, -1500.1])
@@ -621,6 +636,18 @@ def test_selftest_failure(method: str) -> None:
     assert conn.commands[-1] == "SSRQ 0"  # SRQs are disabled again
 
 
+@pytest.mark.parametrize("method", ["selftest_digital", "selftest_analog", "selftest_hv"])
+def test_selftest_failure_with_unknown_code(method: str) -> None:
+    """A fault code missing from SelfTestErrorCode must be raised as a SelftestError with the raw code."""
+    conn = FakeConnection()
+    conn.error_during_wait = 999
+
+    with pytest.raises(SelftestError, match="999") as exc_info:
+        run(conn, lambda device: getattr(device, method)())
+    assert exc_info.value.code == 999
+    assert conn.commands[-1] == "SSRQ 0"  # SRQs are disabled again
+
+
 def test_acal_failure() -> None:
     """A fault during ACAL must raise a DeviceError with the fault code."""
     conn = FakeConnection()
@@ -721,3 +748,100 @@ def test_set_rs232_baud_rate_logs_fractional_rate(caplog: pytest.LogCaptureFixtu
     with caplog.at_level(logging.INFO, logger="fluke5440b_async.fluke_5440b"):
         run(conn, scenario)
     assert "Setting baud rate to 134.5 " in caplog.text
+
+
+# The method, its command and a state the instrument reports while running the job
+LONG_JOBS = [
+    ("selftest_digital", "TSTD", DeviceState.SELF_TEST_MAIN_CPU),
+    ("selftest_analog", "TSTA", DeviceState.SELF_TEST_OVEN),
+    ("selftest_hv", "TSTH", DeviceState.SELF_TEST_HIGH_VOLTAGE),
+    ("acal", "CALI", DeviceState.CALIBRATING_ADC),
+]
+LONG_JOB_COMMANDS = [(method, command) for method, command, _ in LONG_JOBS]
+
+
+@pytest.mark.parametrize("method, command, running", LONG_JOBS)
+def test_long_job_timeout(method: str, command: str, running: DeviceState) -> None:
+    """A job, that does not finish, must raise a TimeoutError, disable the SRQs and release the driver."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> Decimal:
+        conn.states = [DeviceState.IDLE.value]  # Idle before the job, so it is started
+        conn.default_state = running.value  # The job never finishes
+        with pytest.raises(TimeoutError, match="did not finish within 0.05 s"):
+            await getattr(device, method)(timeout=0.05)
+        assert command in conn.commands
+        assert conn.commands[-1] == "SSRQ 0"  # SRQs are disabled again
+        # The lock was released and an interrupted query did not leave its reply behind
+        return await device.get_output()
+
+    assert run(conn, scenario) == Decimal("1.5")
+
+
+@pytest.mark.parametrize("method, command", LONG_JOB_COMMANDS)
+def test_long_job_timeout_includes_waiting_for_idle(method: str, command: str) -> None:
+    """The timeout also covers waiting for a job, that was already running, so the job is never started."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> None:
+        conn.default_state = DeviceState.WRITING_TO_NVRAM.value  # Busy with something else, which never finishes
+        await getattr(device, method)(timeout=0.05)
+
+    with pytest.raises(TimeoutError, match="did not finish within 0.05 s"):
+        run(conn, scenario)
+    assert command not in conn.commands
+    assert conn.commands[-1] == "SSRQ 0"
+
+
+@pytest.mark.parametrize("method, command, running", LONG_JOBS)
+def test_long_job_timeout_instrument_busy(
+    method: str, command: str, running: DeviceState, caplog: pytest.LogCaptureFixture
+) -> None:
+    """If the busy instrument rejects disabling the SRQs after a timeout, the TimeoutError must still be raised."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> None:
+        conn.states = [DeviceState.IDLE.value]
+        conn.default_state = running.value
+        conn.error_on = {"SSRQ 0": ErrorCode.INVALID_COMMAND.value}  # "Instrument is busy"
+        await getattr(device, method)(timeout=0.05)
+
+    with caplog.at_level(logging.WARNING), pytest.raises(TimeoutError, match="did not finish"):
+        run(conn, scenario)
+    assert command in conn.commands
+    assert "Could not disable the SRQs after the timeout" in caplog.text
+
+
+@pytest.mark.parametrize("method, command", LONG_JOB_COMMANDS)
+def test_long_job_srq_error_without_timeout(method: str, command: str) -> None:
+    """Without a timeout, an error while disabling the SRQs must be raised, not just logged."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> None:
+        conn.error_on = {"SSRQ 0": ErrorCode.INVALID_COMMAND.value}
+        await getattr(device, method)()
+
+    with pytest.raises(DeviceError) as exc_info:
+        run(conn, scenario)
+    assert command in conn.commands
+    assert exc_info.value.code is ErrorCode.INVALID_COMMAND
+
+
+@pytest.mark.parametrize("method, command", LONG_JOB_COMMANDS)
+def test_long_job_adapter_timeout(method: str, command: str) -> None:
+    """A TimeoutError of the GPIB adapter must be raised unchanged, it is not a timeout of the job."""
+    conn = FakeConnection()
+    conn.raise_on = {command: TimeoutError("GPIB adapter timeout")}
+
+    with pytest.raises(TimeoutError, match="GPIB adapter timeout"):
+        run(conn, lambda device: getattr(device, method)())
+    assert conn.commands[-1] == "SSRQ 0"
+
+
+@pytest.mark.parametrize("method, command, running", LONG_JOBS)
+def test_long_job_without_timeout(method: str, command: str, running: DeviceState) -> None:
+    """With timeout=None, the job must run until it is done."""
+    conn = FakeConnection()
+    run(conn, with_states(conn, [DeviceState.IDLE, running, DeviceState.IDLE], method, None))
+    assert command in conn.commands
+    assert not conn.states

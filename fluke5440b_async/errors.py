@@ -19,7 +19,7 @@ class DeviceError(Fluke5440bError):
 class SelftestError(Fluke5440bError):
     """The device returned an error during self-test. See page 4-8 of the service manual for details."""
 
-    def __init__(self, selftest: str, error_code: SelfTestErrorCode):
+    def __init__(self, selftest: str, error_code: SelfTestErrorCode | int):
         super().__init__(
             f"{selftest} self-test failed with error: {error_code}."
             f" Check the service manual on page 4-8 for a solution."
