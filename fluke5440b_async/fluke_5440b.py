@@ -848,7 +848,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             await self.__wait_for_rqs()
             state = await self.get_state()
 
-    async def __run_selftest(self, name: str, command: str, duration: str, states: tuple[DeviceState, ...]) -> None:
+    async def __run_selftest(
+        self, name: str, command: str, duration: str, states: tuple[DeviceState, ...], timeout: float | None
+    ) -> None:
         """
         Run a self-test and follow its state changes until the instrument is idle again.
 
@@ -862,85 +864,139 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             The approximate duration of the self-test for the log message, e.g. "5 seconds"
         states: tuple of DeviceState
             The states the instrument passes through during the self-test. Other states are logged as a warning.
+        timeout: float or None
+            The time in seconds the self-test may take, or None to wait forever.
 
         Raises
         ------
         SelftestError
             Raised if the instrument reports a fault.
+        TimeoutError
+            Raised if the self-test did not finish within the timeout.
         DeviceError
             Raised if there was an error processing the command.
         """
         title = name[0].upper() + name[1:]
+        timer = asyncio.timeout(timeout)
         async with self.__lock:
             await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each test step
             try:
-                self.__logger.info("Running %s self-test. This takes about %s.", name, duration)
-                await self.__wait_for_idle()
+                async with timer:
+                    self.__logger.info("Running %s self-test. This takes about %s.", name, duration)
+                    await self.__wait_for_idle()
 
-                await self.write(command, test_error=True)
-                while "testing":
-                    status = await self.__wait_for_rqs(raise_error=False)
-                    if status & SerialPollFlags.ERROR_CONDITION:
-                        error_code = await self.get_error()
-                        raise SelftestError(title, _decode_selftest_error(error_code))
-                    if status & SerialPollFlags.DOING_STATE_CHANGE:
-                        state = await self.get_state()
-                        if state not in (DeviceState.IDLE, *states):
-                            self.__logger.warning("%s self-test failed. Invalid state: %s.", title, state)
+                    await self.write(command, test_error=True)
+                    while "testing":
+                        status = await self.__wait_for_rqs(raise_error=False)
+                        if status & SerialPollFlags.ERROR_CONDITION:
+                            error_code = await self.get_error()
+                            raise SelftestError(title, _decode_selftest_error(error_code))
+                        if status & SerialPollFlags.DOING_STATE_CHANGE:
+                            state = await self.get_state()
+                            if state not in (DeviceState.IDLE, *states):
+                                self.__logger.warning("%s self-test failed. Invalid state: %s.", title, state)
 
-                        if state == DeviceState.IDLE:
-                            break
-                        self.__logger.info("Self-test status: %s.", state)
+                            if state == DeviceState.IDLE:
+                                break
+                            self.__logger.info("Self-test status: %s.", state)
                 self.__logger.info("%s self-test passed.", title)
+            except TimeoutError:
+                if not timer.expired():
+                    raise  # Raised by the GPIB adapter, not by our timeout
+                raise TimeoutError(f"The {name} self-test did not finish within {timeout} s.") from None
             finally:
-                await self.set_srq_mask(SrqMask.NONE)  # Disable SRQs
+                await self.__clean_up_after_job(after_timeout=timer.expired())
 
-    async def selftest_digital(self) -> None:
+    async def __clean_up_after_job(self, after_timeout: bool) -> None:
+        """
+        Disable the SRQs after a self-test or ACAL. A timeout may have interrupted a query between writing the command
+        and reading the reply, so unread replies are discarded first. Otherwise, the next query would read them.
+        After a timeout, the instrument is probably still busy and may reject the command. This must not hide the
+        TimeoutError, so the error is only logged then.
+        """
+        try:
+            if after_timeout:
+                while (await self.serial_poll()) & SerialPollFlags.MSG_RDY:
+                    self.__logger.debug("Discarding an unread reply after the timeout: %s.", await self.read())
+            await self.set_srq_mask(SrqMask.NONE)
+        except DeviceError as exc:
+            if not after_timeout:
+                raise
+            self.__logger.warning("Could not disable the SRQs after the timeout, the instrument may be busy: %s.", exc)
+
+    async def selftest_digital(self, timeout: float | None = 10) -> None:
         """
         Test the main CPU, the front panel CPU and the guard CPU. It will take about 5 seconds during which the
         instrument hardware is blocked. See page 3-19 of the operator manual for details.
+
+        Parameters
+        ----------
+        timeout: float or None, default=10
+            The time in seconds the self-test may take, about twice its usual duration. Set to None to wait forever.
 
         Raises
         ------
         DeviceError
             Raised if there was an error processing the command.
+        TimeoutError
+            Raised if the self-test did not finish within the timeout.
         """
         await self.__run_selftest(
             "digital",
             "TSTD",
             "5 seconds",
             (DeviceState.SELF_TEST_MAIN_CPU, DeviceState.SELF_TEST_FRONTPANEL_CPU, DeviceState.SELF_TEST_GUARD_CPU),
+            timeout,
         )
 
-    async def selftest_analog(self) -> None:
+    async def selftest_analog(self, timeout: float | None = 480) -> None:
         """
         Test the ADC, the low voltage part and the oven. It will take about 4 minutes during which the instrument
         hardware is blocked. See page 3-19 of the operator manual for details.
+
+        Parameters
+        ----------
+        timeout: float or None, default=480
+            The time in seconds the self-test may take, about twice its usual duration. Set to None to wait forever.
 
         Raises
         ------
         DeviceError
             Raised if there was an error processing the command.
+        TimeoutError
+            Raised if the self-test did not finish within the timeout.
         """
         await self.__run_selftest(
             "analog",
             "TSTA",
             "4 minutes",
             (DeviceState.CALIBRATING_ADC, DeviceState.SELF_TEST_LOW_VOLTAGE, DeviceState.SELF_TEST_OVEN),
+            timeout,
         )
 
-    async def selftest_hv(self) -> None:
+    async def selftest_hv(self, timeout: float | None = 120) -> None:
         """
         Test the ADC and the high voltage part. It will take about 1 minute during which the instrument hardware is
         blocked. See page 3-20 of the operator manual for details.
+
+        Parameters
+        ----------
+        timeout: float or None, default=120
+            The time in seconds the self-test may take, about twice its usual duration. Set to None to wait forever.
 
         Raises
         ------
         DeviceError
             Raised if there was an error processing the command.
+        TimeoutError
+            Raised if the self-test did not finish within the timeout.
         """
         await self.__run_selftest(
-            "high voltage", "TSTH", "1 minute", (DeviceState.CALIBRATING_ADC, DeviceState.SELF_TEST_HIGH_VOLTAGE)
+            "high voltage",
+            "TSTH",
+            "1 minute",
+            (DeviceState.CALIBRATING_ADC, DeviceState.SELF_TEST_HIGH_VOLTAGE),
+            timeout,
         )
 
     async def selftest_all(self) -> None:
@@ -957,49 +1013,67 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         await self.selftest_analog()
         await self.selftest_hv()
 
-    async def acal(self) -> None:
+    async def acal(self, timeout: float | None = 780) -> None:
         """
         Run the internal calibration routine. It will take about 6.5 minutes during which the instrument hardware is
         blocked. See page 3-2 of the operator manual for details.
+
+        Parameters
+        ----------
+        timeout: float or None, default=780
+            The time in seconds the calibration may take, about twice its usual duration. Set to None to wait forever.
+
+        Raises
+        ------
+        DeviceError
+            Raised if there was an error processing the command or the instrument reports a fault.
+        TimeoutError
+            Raised if the calibration did not finish within the timeout.
         """
+        timer = asyncio.timeout(timeout)
         async with self.__lock:
             await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait for each calibration step
             try:
-                self.__logger.info("Running internal calibration. This will take about 6.5 minutes.")
-                await self.__wait_for_idle()
+                async with timer:
+                    self.__logger.info("Running internal calibration. This will take about 6.5 minutes.")
+                    await self.__wait_for_idle()
 
-                await self.write("CALI", test_error=True)
-                while "calibrating":
-                    await self.__wait_for_rqs()
-                    state = await self.get_state()
-                    if state not in (
-                        DeviceState.IDLE,
-                        DeviceState.CALIBRATING_ADC,
-                        DeviceState.ZEROING_10V_POS,
-                        DeviceState.CAL_N1_N2_RATIO,
-                        DeviceState.ZEROING_10V_NEG,
-                        DeviceState.ZEROING_20V_POS,
-                        DeviceState.ZEROING_20V_NEG,
-                        DeviceState.ZEROING_250V_POS,
-                        DeviceState.ZEROING_250V_NEG,
-                        DeviceState.ZEROING_1000V_POS,
-                        DeviceState.ZEROING_1000V_NEG,
-                        DeviceState.CALIBRATING_GAIN_10V_POS,
-                        DeviceState.CALIBRATING_GAIN_20V_POS,
-                        DeviceState.CALIBRATING_GAIN_HV_POS,
-                        DeviceState.CALIBRATING_GAIN_HV_NEG,
-                        DeviceState.CALIBRATING_GAIN_20V_NEG,
-                        DeviceState.CALIBRATING_GAIN_10V_NEG,
-                        DeviceState.WRITING_TO_NVRAM,
-                    ):
-                        self.__logger.warning("Internal calibration failed. Invalid state: %s.", state)
+                    await self.write("CALI", test_error=True)
+                    while "calibrating":
+                        await self.__wait_for_rqs()
+                        state = await self.get_state()
+                        if state not in (
+                            DeviceState.IDLE,
+                            DeviceState.CALIBRATING_ADC,
+                            DeviceState.ZEROING_10V_POS,
+                            DeviceState.CAL_N1_N2_RATIO,
+                            DeviceState.ZEROING_10V_NEG,
+                            DeviceState.ZEROING_20V_POS,
+                            DeviceState.ZEROING_20V_NEG,
+                            DeviceState.ZEROING_250V_POS,
+                            DeviceState.ZEROING_250V_NEG,
+                            DeviceState.ZEROING_1000V_POS,
+                            DeviceState.ZEROING_1000V_NEG,
+                            DeviceState.CALIBRATING_GAIN_10V_POS,
+                            DeviceState.CALIBRATING_GAIN_20V_POS,
+                            DeviceState.CALIBRATING_GAIN_HV_POS,
+                            DeviceState.CALIBRATING_GAIN_HV_NEG,
+                            DeviceState.CALIBRATING_GAIN_20V_NEG,
+                            DeviceState.CALIBRATING_GAIN_10V_NEG,
+                            DeviceState.WRITING_TO_NVRAM,
+                        ):
+                            self.__logger.warning("Internal calibration failed. Invalid state: %s.", state)
 
-                    if state == DeviceState.IDLE:
-                        break
-                    self.__logger.info("Calibration status: %s", state)
+                        if state == DeviceState.IDLE:
+                            break
+                        self.__logger.info("Calibration status: %s", state)
                 self.__logger.info("Internal calibration done.")
+            except TimeoutError:
+                if not timer.expired():
+                    raise  # Raised by the GPIB adapter, not by our timeout
+                raise TimeoutError(f"The internal calibration did not finish within {timeout} s.") from None
             finally:
-                await self.set_srq_mask(SrqMask.NONE)  # Disable SRQs
+                await self.__clean_up_after_job(after_timeout=timer.expired())
 
     async def get_calibration_constants(self) -> CalibrationConstants:
         """
