@@ -56,6 +56,7 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
         self.state_change = False
         self.extra_status = 0  # Additional bits returned by the serial poll
         self.error_during_wait: int | None = None  # Error raised by the instrument while a long job is running
+        self.wait_timeouts = 0  # Number of waits that time out before the instrument requests service
         self.fail_local = False
 
     @override
@@ -70,6 +71,7 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
 
     async def clear(self) -> None:
         self.calls.append("clear")
+        self.state_change = True  # A device clear resets the instrument
 
     async def ibloc(self) -> None:
         if self.fail_local:
@@ -103,6 +105,9 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
         return self.output_buffer.pop(0)
 
     async def wait(self, mask: int) -> None:  # pylint: disable=unused-argument
+        if self.wait_timeouts:
+            self.wait_timeouts -= 1
+            raise TimeoutError("Timeout waiting for SRQ.")
         self.state_change = True
         if self.error_during_wait is not None:
             self.error = self.error_during_wait
@@ -122,6 +127,18 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
     def commands(self) -> list[str]:
         """All commands written, decoded."""
         return [cmd.decode("ascii") for cmd in self.written]
+
+
+class FakePrologixConnection(FakeConnection):
+    """The Prologix adapters additionally need the EOI setting."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.eot: bool | None = None
+
+    async def set_eot(self, value: bool) -> None:
+        """Enable or disable appending the EOT character, when the instrument signals EOI."""
+        self.eot = value
 
 
 @pytest.fixture(autouse=True)
@@ -171,6 +188,14 @@ def test_connect_configures_instrument() -> None:
     assert conn.calls == ["connect", "ibloc", "disconnect"]
     for cmd in ("STRM 2", "SSEP 0", "SSRQ 0"):
         assert cmd in conn.commands
+
+
+def test_connect_prologix_disables_eot() -> None:
+    """With a Prologix adapter, connect() must disable the EOT character, the instrument terminates the lines."""
+    conn = FakePrologixConnection()
+
+    run(conn, lambda device: asyncio.sleep(0))
+    assert conn.eot is False
 
 
 def test_connect_clears_messages_and_errors_from_boot() -> None:
@@ -326,6 +351,7 @@ def test_get_output() -> None:
     [
         ("set_voltage_limit", (100,), ["SVLM 100.00000"]),
         ("set_voltage_limit", (100, -50), ["SVLM -50.000000", "SVLM 100.00000"]),
+        ("set_current_limit", (0.01,), ["SCLM 0.01000000"]),
         ("set_current_limit", (0.01, -0.02), ["SCLM -0.02000000", "SCLM 0.01000000"]),
     ],
 )
@@ -343,6 +369,7 @@ def test_set_limits(method: str, args: tuple[float, ...], commands: list[str]) -
         ("set_voltage_limit", (100, -1501)),
         ("set_voltage_limit", (100, 50)),  # Both limits positive
         ("set_current_limit", (21,)),
+        ("set_current_limit", (0.01, -21)),
         ("set_current_limit", (0.01, 0.02)),
     ],
 )
@@ -352,13 +379,33 @@ def test_set_limits_invalid(method: str, args: tuple[float, ...]) -> None:
         run(FakeConnection(), lambda device: getattr(device, method)(*args))
 
 
-def test_set_limits_rejected_by_instrument() -> None:
+@pytest.mark.parametrize("method, header", [("set_voltage_limit", "SVLM"), ("set_current_limit", "SCLM")])
+def test_set_limits_rejected_by_instrument(method: str, header: str) -> None:
     """A limit rejected by the instrument must raise a ValueError."""
     conn = FakeConnection()
-    conn.error_on = {"SVLM": ErrorCode.LIMIT_OUT_OF_RANGE.value}
+    conn.error_on = {header: ErrorCode.LIMIT_OUT_OF_RANGE.value}
 
-    with pytest.raises(ValueError):
-        run(conn, lambda device: device.set_voltage_limit(100))
+    with pytest.raises(ValueError, match="Invalid .* limit"):
+        run(conn, lambda device: getattr(device, method)(1))
+
+
+@pytest.mark.parametrize(
+    "method, header",
+    [
+        ("set_voltage_limit", "SVLM"),
+        ("set_current_limit", "SCLM"),
+        ("set_internal_sense", "ISNS"),
+        ("set_internal_guard", "IGRD"),
+    ],
+)
+def test_other_errors_are_passed_on(method: str, header: str) -> None:
+    """Errors, that are not translated to a ValueError, must be raised as a DeviceError."""
+    conn = FakeConnection()
+    conn.error_on = {header: ErrorCode.INVALID_COMMAND.value}
+
+    with pytest.raises(DeviceError) as exc_info:
+        run(conn, lambda device: getattr(device, method)(1))
+    assert exc_info.value.code is ErrorCode.INVALID_COMMAND
 
 
 @pytest.mark.parametrize(
@@ -500,6 +547,7 @@ def test_reset() -> None:
     """reset() must send a device clear, wait for the reset and configure the instrument again."""
     conn = FakeConnection()
     run(conn, with_states(conn, [DeviceState.RESETTING, DeviceState.IDLE], "reset"))
+    assert not conn.state_change  # The driver waited for the state change of the device clear
     assert not conn.states
     assert "clear" in conn.calls
     assert conn.commands[-3:] == ["STRM 2", "SSEP 0", "SSRQ 0"]
@@ -528,14 +576,30 @@ def test_long_jobs(method: str, command: str, states: list[DeviceState]) -> None
     assert conn.commands[-1] == "SSRQ 0"  # SRQs are disabled again
 
 
-def test_long_job_reports_unexpected_state(caplog: pytest.LogCaptureFixture) -> None:
-    """An unexpected state during a self-test must be logged."""
+@pytest.mark.parametrize("method", ["selftest_digital", "selftest_analog", "selftest_hv", "acal"])
+def test_long_job_reports_unexpected_state(method: str, caplog: pytest.LogCaptureFixture) -> None:
+    """An unexpected state during a self-test or ACAL must be logged."""
     conn = FakeConnection()
 
     with caplog.at_level(logging.WARNING):
-        run(conn, with_states(conn, [DeviceState.IDLE, DeviceState.PRINTING, DeviceState.IDLE], "selftest_hv"))
+        run(conn, with_states(conn, [DeviceState.IDLE, DeviceState.PRINTING, DeviceState.IDLE], method))
+    assert "Invalid state: DeviceState.PRINTING" in caplog.text
     assert not conn.states
-    assert "Invalid state" in caplog.text
+
+
+@pytest.mark.parametrize("method", ["selftest_digital", "selftest_analog", "selftest_hv", "acal"])
+def test_long_job_survives_wait_timeout(method: str, caplog: pytest.LogCaptureFixture) -> None:
+    """A wait, that times out, must be logged and the driver must keep waiting for the job to finish."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> None:
+        conn.wait_timeouts = 1
+        await with_states(conn, [DeviceState.IDLE, DeviceState.CALIBRATING_ADC, DeviceState.IDLE], method)(device)
+
+    with caplog.at_level(logging.WARNING):
+        run(conn, scenario)
+    assert "Timeout during wait" in caplog.text
+    assert not conn.states  # The job was followed until the instrument was idle again
 
 
 def test_selftest_all() -> None:
