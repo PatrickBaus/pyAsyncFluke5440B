@@ -56,6 +56,17 @@ def _decode_error(code: int) -> ErrorCode | SelfTestErrorCode | int:
         return code
 
 
+def _decode_selftest_error(code: int) -> SelfTestErrorCode | int:
+    """
+    Convert an error number returned by the instrument after a failed self-test to an enum. Unknown codes are returned
+    as a plain int, so that the original error is never lost.
+    """
+    try:
+        return SelfTestErrorCode(code)
+    except ValueError:
+        return code
+
+
 def _parse_int(result: str | list[str]) -> int:
     """Parse an integer reply from the instrument, raising a ValueError with the reply if it is not an integer."""
     try:
@@ -858,7 +869,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                     status = await self.__wait_for_rqs(raise_error=False)
                     if status & SerialPollFlags.ERROR_CONDITION:
                         error_code = await self.get_error()
-                        raise SelftestError("Digital", SelfTestErrorCode(error_code))
+                        raise SelftestError("Digital", _decode_selftest_error(error_code))
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (
@@ -897,7 +908,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                     status = await self.__wait_for_rqs(raise_error=False)
                     if status & SerialPollFlags.ERROR_CONDITION:
                         error_code = await self.get_error()
-                        raise SelftestError("Analog", SelfTestErrorCode(error_code))
+                        raise SelftestError("Analog", _decode_selftest_error(error_code))
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (
@@ -936,7 +947,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
                     status = await self.__wait_for_rqs(raise_error=False)
                     if status & SerialPollFlags.ERROR_CONDITION:
                         error_code = await self.get_error()
-                        raise SelftestError("High voltage", SelfTestErrorCode(error_code))
+                        raise SelftestError("High voltage", _decode_selftest_error(error_code))
                     if status & SerialPollFlags.DOING_STATE_CHANGE:
                         state = await self.get_state()
                         if state not in (

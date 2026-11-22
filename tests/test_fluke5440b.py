@@ -631,6 +631,18 @@ def test_selftest_failure(method: str) -> None:
     assert conn.commands[-1] == "SSRQ 0"  # SRQs are disabled again
 
 
+@pytest.mark.parametrize("method", ["selftest_digital", "selftest_analog", "selftest_hv"])
+def test_selftest_failure_with_unknown_code(method: str) -> None:
+    """A fault code missing from SelfTestErrorCode must be raised as a SelftestError with the raw code."""
+    conn = FakeConnection()
+    conn.error_during_wait = 999
+
+    with pytest.raises(SelftestError, match="999") as exc_info:
+        run(conn, lambda device: getattr(device, method)())
+    assert exc_info.value.code == 999
+    assert conn.commands[-1] == "SSRQ 0"  # SRQs are disabled again
+
+
 def test_acal_failure() -> None:
     """A fault during ACAL must raise a DeviceError with the fault code."""
     conn = FakeConnection()
