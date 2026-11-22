@@ -19,4 +19,5 @@ __all__ = [
     "SerialPollFlags",
     "SrqMask",
     "StatusFlags",
+    "__version__",
 ]
