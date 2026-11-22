@@ -25,7 +25,7 @@ import logging
 from dataclasses import dataclass
 from decimal import ROUND_HALF_EVEN, Decimal
 from types import TracebackType
-from typing import TYPE_CHECKING, Self, cast, override
+from typing import TYPE_CHECKING, Any, Self, cast, override
 
 from fluke5440b_async.enums import DeviceState, ErrorCode, ModeType, SelfTestErrorCode, SeparatorType, TerminatorType
 from fluke5440b_async.errors import DeviceError, SelftestError
@@ -86,7 +86,7 @@ class _ReentrantLock:
 
     def __init__(self) -> None:
         self.__lock = asyncio.Lock()
-        self.__owner: asyncio.Task | None = None
+        self.__owner: asyncio.Task[Any] | None = None
         self.__depth = 0
 
     async def __aenter__(self) -> None:
@@ -214,7 +214,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         version = (await self._get_software_version()).strip()
         return "Fluke", "5440B", "0", version
 
-    def set_log_level(self, loglevel: int = logging.WARNING):
+    def set_log_level(self, loglevel: int = logging.WARNING) -> None:
         """
         Set the log level of the library. By default, the level is set to warning.
         Parameters
@@ -266,7 +266,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         finally:
             await self.__conn.disconnect()
 
-    async def write(self, cmd: str | bytes, test_error: bool = False):
+    async def write(self, cmd: str | bytes, test_error: bool = False) -> None:
         """
         Write a string or bytestring to the instrument.
         Parameters
@@ -319,7 +319,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         str or list of str:
             Returns either a simple string, or if multiple results are returned, a list of strings.
         """
-        result = (await self.__conn.read()).rstrip().decode("utf-8").split(",")  # strip \n and split at the separator
+        result: list[str] = (
+            (await self.__conn.read()).rstrip().decode("utf-8").split(",")
+        )  # strip \n and split at the separator
         return result[0] if len(result) == 1 else result
 
     async def query(self, cmd: str | bytes, test_error: bool = False) -> str | list[str]:

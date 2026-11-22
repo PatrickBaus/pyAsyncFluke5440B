@@ -161,7 +161,8 @@ def run[T](conn: FakeConnection, scenario: Callable[[Fluke_5440B], Awaitable[T]]
     """Connect to the fake instrument, run the scenario and disconnect."""
 
     async def main() -> T:
-        async with Fluke_5440B(conn) as device:  # type: ignore[arg-type]
+        # FakeConnection is not a GpibConnection. The ignore is unused if the adapter libraries are not installed.
+        async with Fluke_5440B(conn) as device:  # type: ignore[arg-type,unused-ignore]
             return await scenario(device)
 
     return asyncio.run(main())

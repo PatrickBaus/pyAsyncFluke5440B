@@ -100,6 +100,12 @@ target-version = ["py312"]
 python_version = "3.12"
 # Require @typing.override on every overriding method, so that renaming a base method cannot silently break a subclass
 enable_error_code = ["explicit-override"]
+strict = true
+
+[[tool.mypy.overrides]]
+# Linux GPIB and gpib_ctypes, used by the examples, have no type hints
+module = ["Gpib", "gpib_ctypes", "gpib_ctypes.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 # examples/test_functions.py is an example for real hardware, not a test
