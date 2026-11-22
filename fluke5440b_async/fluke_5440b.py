@@ -56,6 +56,46 @@ def _decode_error(code: int) -> ErrorCode | SelfTestErrorCode | int:
         return code
 
 
+def _parse_int(result: str | list[str]) -> int:
+    """Parse an integer reply from the instrument, raising a ValueError with the reply if it is not an integer."""
+    try:
+        if not isinstance(result, str):
+            raise ValueError
+        return int(result)
+    except ValueError:
+        raise ValueError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+
+
+class _ReentrantLock:
+    """
+    An asyncio lock, that can be acquired again by the task already holding it. This allows the multistep sequences
+    (self-tests, ACAL, ...) to hold the lock while calling :func:`Fluke_5440B.write` and :func:`Fluke_5440B.query`,
+    which lock as well.
+    """
+
+    def __init__(self) -> None:
+        self.__lock = asyncio.Lock()
+        self.__owner: asyncio.Task | None = None
+        self.__depth = 0
+
+    async def __aenter__(self) -> None:
+        task = asyncio.current_task()
+        if self.__owner is not None and self.__owner is task:
+            self.__depth += 1
+            return
+        await self.__lock.acquire()
+        self.__owner = task
+        self.__depth = 1
+
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        self.__depth -= 1
+        if self.__depth == 0:
+            self.__owner = None
+            self.__lock.release()
+
+
 @dataclass(slots=True)
 class CalibrationConstants:  # pylint: disable=too-many-instance-attributes
     """The calibration constants of the Fluke 5440B."""
@@ -133,7 +173,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             The level of logging output. By default, only warnings or higher are output.
         """
         self.__conn = connection
-        self.__lock = asyncio.Lock()
+        self.__lock = _ReentrantLock()
 
         self.__logger = logging.getLogger(__name__)
         self.__logger.setLevel(log_level)  # Only log really important messages by default
@@ -238,23 +278,27 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         if len(cmd) > 127:
             raise ValueError("Command size must be 127 byte or less.")
 
-        await self.__conn.write(cmd)
-        if test_error:
-            await asyncio.sleep(0.2)  # The instrument is slow in parsing commands
-            spoll = await self.serial_poll()
-            if spoll & SerialPollFlags.ERROR_CONDITION:
-                self.__logger.debug("Received error while writing command %s. Serial poll register: %s.", cmd, spoll)
-                msg = None
-                if spoll & SerialPollFlags.MSG_RDY:
-                    # The command did return some msg, so we need to read that first (and drop it)
-                    msg = await self.read()
+        # Hold the lock, so that the error check below cannot be interleaved with commands from other tasks
+        async with self.__lock:
+            await self.__conn.write(cmd)
+            if test_error:
+                await asyncio.sleep(0.2)  # The instrument is slow in parsing commands
+                spoll = await self.serial_poll()
+                if spoll & SerialPollFlags.ERROR_CONDITION:
+                    self.__logger.debug(
+                        "Received error while writing command %s. Serial poll register: %s.", cmd, spoll
+                    )
+                    msg = None
+                    if spoll & SerialPollFlags.MSG_RDY:
+                        # The command did return some msg, so we need to read that first (and drop it)
+                        msg = await self.read()
 
-                err = _decode_error(await self.get_error())
-                if msg is None:
-                    raise DeviceError(f"Device error on command: {cmd.decode('utf-8')}, code: {err}", err)
-                raise DeviceError(
-                    f"Device error on command: {cmd.decode('utf-8')}, code: {err}, Message returned: {msg}", err
-                )
+                    err = _decode_error(await self.get_error())
+                    if msg is None:
+                        raise DeviceError(f"Device error on command: {cmd.decode('utf-8')}, code: {err}", err)
+                    raise DeviceError(
+                        f"Device error on command: {cmd.decode('utf-8')}, code: {err}, Message returned: {msg}", err
+                    )
 
     async def read(self) -> str | list[str]:
         """
@@ -288,8 +332,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         DeviceError
             If test_error is set to True and there was an error processing the command.
         """
-        await self.write(cmd, test_error)
-        return await self.read()
+        async with self.__lock:  # make sure no other task reads our reply
+            await self.write(cmd, test_error)
+            return await self.read()
 
     async def __wait_for_state_change(self) -> None:
         while (await self.serial_poll()) & SerialPollFlags.DOING_STATE_CHANGE:
@@ -334,11 +379,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         async with self.__lock:
             result = await self.query("GTRM", test_error=True)
-            try:
-                assert isinstance(result, str)
-                term = int(result)
-            except TypeError:
-                raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+            term = _parse_int(result)
             return TerminatorType(term)
 
     async def __set_terminator(self, value: TerminatorType) -> None:
@@ -372,11 +413,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if there was an error processing the command.
         """
         result = await self.query("GSEP", test_error=True)
-        try:
-            assert isinstance(result, str)
-            sep = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        sep = _parse_int(result)
         return SeparatorType(sep)
 
     async def __set_separator(self, value: SeparatorType) -> None:
@@ -516,6 +553,8 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
         Raises
         ------
+        ValueError
+            Raised if the sense mode is not allowed in the current configuration of the instrument.
         DeviceError
             Raised if there was an error processing the command.
         """
@@ -523,7 +562,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             await self.write("ISNS" if enabled else "ESNS", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.INVALID_SENSE_MODE:
-                raise TypeError("Sense mode not allowed.") from None
+                raise ValueError("Sense mode not allowed.") from None
             raise
 
     async def set_internal_guard(self, enabled: bool) -> None:
@@ -538,6 +577,8 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
         Raises
         ------
+        ValueError
+            Raised if the guard mode is not allowed in the current configuration of the instrument.
         DeviceError
             Raised if there was an error processing the command.
         """
@@ -545,7 +586,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             await self.write("IGRD" if enabled else "EGRD", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.INVALID_GUARD_MODE:
-                raise TypeError("Guard mode not allowed.") from None
+                raise ValueError("Guard mode not allowed.") from None
             raise
 
     async def set_divider(self, enabled: bool) -> None:
@@ -716,11 +757,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if there was an error processing the command.
         """
         result = await self.query("GSTS", test_error=True)
-        try:
-            assert isinstance(result, str)
-            status = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        status = _parse_int(result)
 
         return StatusFlags(status)
 
@@ -736,11 +773,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         # Do not test for errors, because this is an infinite loop.
         result = await self.query("GERR", test_error=False)
-        try:
-            assert isinstance(result, str)
-            error_code = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        error_code = _parse_int(result)
 
         return error_code
 
@@ -758,11 +791,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if there was an error processing the command.
         """
         result = await self.query("GDNG", test_error=True)
-        try:
-            assert isinstance(result, str)
-            dev_state = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        dev_state = _parse_int(result)
 
         return DeviceState(dev_state)
 
@@ -1029,11 +1058,9 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             If test_error is set to True and there was an error processing the command.
         """
         result = await self.query("GBDR", test_error=True)
-        try:
-            assert isinstance(result, str)
-            baud_rate = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        baud_rate = _parse_int(result)
+        if not 0 <= baud_rate < len(BAUD_RATES_AVAILABLE):
+            raise ValueError(f"Invalid reply received. Expected a baud rate index, but received: {result}")
         return BAUD_RATES_AVAILABLE[baud_rate]
 
     async def set_rs232_baud_rate(self, value: int | float) -> None:
@@ -1052,7 +1079,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         if value not in BAUD_RATES_AVAILABLE:
             raise ValueError(f"Invalid baud rate. It must be one of: {','.join(map(str, BAUD_RATES_AVAILABLE))}.")
         async with self.__lock:
-            self.__logger.info("Setting baud rate to %d and writing to NVRAM. This takes about 1.5 minutes.", value)
+            self.__logger.info("Setting baud rate to %s and writing to NVRAM. This takes about 1.5 minutes.", value)
             try:
                 await self.write(f"SBDR {BAUD_RATES_AVAILABLE.index(value):d}", test_error=True)
                 await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait until written to NVRAM
@@ -1101,11 +1128,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             If test_error is set to True and there was an error processing the command.
         """
         result = await self.query("GSRQ", test_error=True)
-        try:
-            assert isinstance(result, str)
-            mask = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        mask = _parse_int(result)
         return SrqMask(mask)
 
     async def set_srq_mask(self, value: SrqMask) -> None:

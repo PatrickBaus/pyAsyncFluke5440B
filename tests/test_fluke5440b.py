@@ -48,6 +48,7 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
             "GCLM": "0.02,-0.02",
             "GBDR": "12",
         }
+        self.overrides: dict[str, str] = {}  # Replies by command header, these take precedence over all other replies
         self.output_buffer: list[bytes] = []
         self.error_on: dict[str, int] = {}  # Command prefix -> error code raised by the instrument
         self.error = 0
@@ -84,7 +85,9 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
             for prefix, code in self.error_on.items():
                 if cmd.startswith(prefix):
                     self.error = code
-            if header == "GERR":
+            if header in self.overrides:
+                replies.append(self.overrides[header])
+            elif header == "GERR":
                 replies.append(str(self.error))
                 self.error = 0
             elif header == "GDNG":
@@ -404,11 +407,11 @@ def test_switches(method: str, enabled: bool, command: str) -> None:
     ],
 )
 def test_invalid_terminal_mode(method: str, code: ErrorCode) -> None:
-    """A sense or guard mode not allowed by the instrument must raise a TypeError."""
+    """A sense or guard mode not allowed by the instrument must raise a ValueError."""
     conn = FakeConnection()
     conn.error_on = {"I": code.value}
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError, match="mode not allowed"):
         run(conn, lambda device: getattr(device, method)(True))
 
 
@@ -581,3 +584,76 @@ def test_set_log_level() -> None:
 
     run(FakeConnection(), scenario)
     assert logging.getLogger("fluke5440b_async.fluke_5440b").level == logging.DEBUG
+
+
+@pytest.mark.parametrize(
+    "method, header",
+    [
+        ("get_status", "GSTS"),
+        ("get_state", "GDNG"),
+        ("get_error", "GERR"),
+        ("get_terminator", "GTRM"),
+        ("get_separator", "GSEP"),
+        ("get_srq_mask", "GSRQ"),
+        ("get_rs232_baud_rate", "GBDR"),
+    ],
+)
+@pytest.mark.parametrize("reply", ["junk", "1,2"])
+def test_invalid_integer_reply(method: str, header: str, reply: str) -> None:
+    """A reply that is not a single integer must raise a ValueError naming the reply."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> Any:
+        conn.overrides[header] = reply
+        return await getattr(device, method)()
+
+    with pytest.raises(ValueError, match="Invalid reply received"):
+        run(conn, scenario)
+
+
+def test_concurrent_queries() -> None:
+    """Queries from concurrent tasks must not read the replies of each other."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> list[Any]:
+        # A query without the error check takes fewer steps, so without a lock its read would overtake the others
+        return await asyncio.gather(*(coro for _ in range(5) for coro in (device.get_id(), device.query("GOUT"))))
+
+    results = run(conn, scenario)
+    assert results == [("Fluke", "5440B", "0", "1.08"), "1.5"] * 5
+
+
+def test_concurrent_errors() -> None:
+    """An error must be reported to the task that sent the failing command, not to a concurrent task."""
+    conn = FakeConnection()
+    conn.error_on = {"FOO": ErrorCode.UNKNOWN_COMMAND.value}
+
+    async def scenario(device: Fluke_5440B) -> tuple[None | BaseException, Decimal | BaseException]:
+        return await asyncio.gather(device.write("FOO", test_error=True), device.get_output(), return_exceptions=True)
+
+    failing, output = run(conn, scenario)
+    assert isinstance(failing, DeviceError) and failing.code is ErrorCode.UNKNOWN_COMMAND
+    assert output == Decimal("1.5")
+
+
+@pytest.mark.parametrize("reply", ["13", "-1"])
+def test_get_rs232_baud_rate_invalid_reply(reply: str) -> None:
+    """An index outside the table of baud rates must raise a ValueError instead of returning a wrong rate."""
+    conn = FakeConnection()
+    conn.replies["GBDR"] = reply
+
+    with pytest.raises(ValueError, match="baud rate index"):
+        run(conn, lambda device: device.get_rs232_baud_rate())
+
+
+def test_set_rs232_baud_rate_logs_fractional_rate(caplog: pytest.LogCaptureFixture) -> None:
+    """134.5 baud must not be logged as 134."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> None:
+        device.set_log_level(logging.INFO)
+        await device.set_rs232_baud_rate(134.5)
+
+    with caplog.at_level(logging.INFO, logger="fluke5440b_async.fluke_5440b"):
+        run(conn, scenario)
+    assert "Setting baud rate to 134.5 " in caplog.text
