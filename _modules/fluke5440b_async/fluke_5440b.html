@@ -4,11 +4,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>fluke5440b_async.fluke_5440b &#8212; fluke5440b_async v1.0.4.dev15 documentation</title>
+    <title>fluke5440b_async.fluke_5440b &#8212; fluke5440b_async v1.0.4.dev16 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/nature.css?v=279e0f84" />
     <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css?v=3bc2df39" />
-    <script src="../../_static/documentation_options.js?v=718b5ebd"></script>
+    <script src="../../_static/documentation_options.js?v=4673d4d7"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -23,7 +23,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">fluke5440b_async v1.0.4.dev15 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">fluke5440b_async v1.0.4.dev16 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">fluke5440b_async.fluke_5440b</a></li> 
       </ul>
@@ -91,6 +91,46 @@
         <span class="k">return</span> <span class="n">SelfTestErrorCode</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">code</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_int</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Parse an integer reply from the instrument, raising a ValueError with the reply if it is not an integer."""</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_ReentrantLock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    An asyncio lock, that can be acquired again by the task already holding it. This allows the multistep sequences</span>
+<span class="sd">    (self-tests, ACAL, ...) to hold the lock while calling :func:`Fluke_5440B.write` and :func:`Fluke_5440B.query`,</span>
+<span class="sd">    which lock as well.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__owner</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__depth</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">current_task</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">__owner</span> <span class="ow">is</span> <span class="n">task</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__depth</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__owner</span> <span class="o">=</span> <span class="n">task</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__depth</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aexit__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="ne">BaseException</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span> <span class="ne">BaseException</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">traceback</span><span class="p">:</span> <span class="n">TracebackType</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__depth</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__owner</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
 
 
 <div class="viewcode-block" id="CalibrationConstants">
@@ -177,7 +217,7 @@
 <span class="sd">            The level of logging output. By default, only warnings or higher are output.</span>
 <span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span> <span class="o">=</span> <span class="n">connection</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span> <span class="o">=</span> <span class="n">_ReentrantLock</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">log_level</span><span class="p">)</span>  <span class="c1"># Only log really important messages by default</span></div>
@@ -297,23 +337,27 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">127</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Command size must be 127 byte or less."</span><span class="p">)</span>
 
-        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">test_error</span><span class="p">:</span>
-            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>  <span class="c1"># The instrument is slow in parsing commands</span>
-            <span class="n">spoll</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_poll</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">spoll</span> <span class="o">&amp;</span> <span class="n">SerialPollFlags</span><span class="o">.</span><span class="n">ERROR_CONDITION</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Received error while writing command </span><span class="si">%s</span><span class="s2">. Serial poll register: </span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">spoll</span><span class="p">)</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="k">if</span> <span class="n">spoll</span> <span class="o">&amp;</span> <span class="n">SerialPollFlags</span><span class="o">.</span><span class="n">MSG_RDY</span><span class="p">:</span>
-                    <span class="c1"># The command did return some msg, so we need to read that first (and drop it)</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="c1"># Hold the lock, so that the error check below cannot be interleaved with commands from other tasks</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span><span class="p">:</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">__conn</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">test_error</span><span class="p">:</span>
+                <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>  <span class="c1"># The instrument is slow in parsing commands</span>
+                <span class="n">spoll</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_poll</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">spoll</span> <span class="o">&amp;</span> <span class="n">SerialPollFlags</span><span class="o">.</span><span class="n">ERROR_CONDITION</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                        <span class="s2">"Received error while writing command </span><span class="si">%s</span><span class="s2">. Serial poll register: </span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">spoll</span>
+                    <span class="p">)</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="n">spoll</span> <span class="o">&amp;</span> <span class="n">SerialPollFlags</span><span class="o">.</span><span class="n">MSG_RDY</span><span class="p">:</span>
+                        <span class="c1"># The command did return some msg, so we need to read that first (and drop it)</span>
+                        <span class="n">msg</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
-                <span class="n">err</span> <span class="o">=</span> <span class="n">_decode_error</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_error</span><span class="p">())</span>
-                <span class="k">if</span> <span class="n">msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Device error on command: </span><span class="si">{</span><span class="n">cmd</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">)</span><span class="si">}</span><span class="s2">, code: </span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"Device error on command: </span><span class="si">{</span><span class="n">cmd</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">)</span><span class="si">}</span><span class="s2">, code: </span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">, Message returned: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">err</span>
-                <span class="p">)</span></div>
+                    <span class="n">err</span> <span class="o">=</span> <span class="n">_decode_error</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_error</span><span class="p">())</span>
+                    <span class="k">if</span> <span class="n">msg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Device error on command: </span><span class="si">{</span><span class="n">cmd</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">)</span><span class="si">}</span><span class="s2">, code: </span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="n">DeviceError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"Device error on command: </span><span class="si">{</span><span class="n">cmd</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">)</span><span class="si">}</span><span class="s2">, code: </span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">, Message returned: </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">err</span>
+                    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Fluke_5440B.read">
@@ -353,8 +397,9 @@
 <span class="sd">        DeviceError</span>
 <span class="sd">            If test_error is set to True and there was an error processing the command.</span>
 <span class="sd">        """</span>
-        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">test_error</span><span class="p">)</span>
-        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
+        <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span><span class="p">:</span>  <span class="c1"># make sure no other task reads our reply</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">test_error</span><span class="p">)</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
 
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">__wait_for_state_change</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -408,11 +453,7 @@
 <span class="sd">        """</span>
         <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">"GTRM"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-                <span class="n">term</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+            <span class="n">term</span> <span class="o">=</span> <span class="n">_parse_int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">TerminatorType</span><span class="p">(</span><span class="n">term</span><span class="p">)</span></div>
 
 
@@ -449,11 +490,7 @@
 <span class="sd">            Raised if there was an error processing the command.</span>
 <span class="sd">        """</span>
         <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">"GSEP"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-            <span class="n">sep</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+        <span class="n">sep</span> <span class="o">=</span> <span class="n">_parse_int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">SeparatorType</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span></div>
 
 
@@ -608,6 +645,8 @@
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            Raised if the sense mode is not allowed in the current configuration of the instrument.</span>
 <span class="sd">        DeviceError</span>
 <span class="sd">            Raised if there was an error processing the command.</span>
 <span class="sd">        """</span>
@@ -615,7 +654,7 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"ISNS"</span> <span class="k">if</span> <span class="n">enabled</span> <span class="k">else</span> <span class="s2">"ESNS"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">DeviceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">INVALID_SENSE_MODE</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Sense mode not allowed."</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sense mode not allowed."</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
             <span class="k">raise</span></div>
 
 
@@ -633,6 +672,8 @@
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            Raised if the guard mode is not allowed in the current configuration of the instrument.</span>
 <span class="sd">        DeviceError</span>
 <span class="sd">            Raised if there was an error processing the command.</span>
 <span class="sd">        """</span>
@@ -640,7 +681,7 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"IGRD"</span> <span class="k">if</span> <span class="n">enabled</span> <span class="k">else</span> <span class="s2">"EGRD"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">DeviceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">INVALID_GUARD_MODE</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Guard mode not allowed."</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Guard mode not allowed."</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
             <span class="k">raise</span></div>
 
 
@@ -829,11 +870,7 @@
 <span class="sd">            Raised if there was an error processing the command.</span>
 <span class="sd">        """</span>
         <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">"GSTS"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-            <span class="n">status</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">_parse_int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">StatusFlags</span><span class="p">(</span><span class="n">status</span><span class="p">)</span></div>
 
@@ -852,11 +889,7 @@
 <span class="sd">        """</span>
         <span class="c1"># Do not test for errors, because this is an infinite loop.</span>
         <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">"GERR"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-            <span class="n">error_code</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+        <span class="n">error_code</span> <span class="o">=</span> <span class="n">_parse_int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">error_code</span></div>
 
@@ -877,11 +910,7 @@
 <span class="sd">            Raised if there was an error processing the command.</span>
 <span class="sd">        """</span>
         <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">"GDNG"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-            <span class="n">dev_state</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+        <span class="n">dev_state</span> <span class="o">=</span> <span class="n">_parse_int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">DeviceState</span><span class="p">(</span><span class="n">dev_state</span><span class="p">)</span></div>
 
@@ -1169,11 +1198,9 @@
 <span class="sd">            If test_error is set to True and there was an error processing the command.</span>
 <span class="sd">        """</span>
         <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">"GBDR"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-            <span class="n">baud_rate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+        <span class="n">baud_rate</span> <span class="o">=</span> <span class="n">_parse_int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">baud_rate</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">BAUD_RATES_AVAILABLE</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected a baud rate index, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">BAUD_RATES_AVAILABLE</span><span class="p">[</span><span class="n">baud_rate</span><span class="p">]</span></div>
 
 
@@ -1195,7 +1222,7 @@
         <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BAUD_RATES_AVAILABLE</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid baud rate. It must be one of: </span><span class="si">{</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="w"> </span><span class="n">BAUD_RATES_AVAILABLE</span><span class="p">))</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lock</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Setting baud rate to </span><span class="si">%d</span><span class="s2"> and writing to NVRAM. This takes about 1.5 minutes."</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Setting baud rate to </span><span class="si">%s</span><span class="s2"> and writing to NVRAM. This takes about 1.5 minutes."</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SBDR </span><span class="si">{</span><span class="n">BAUD_RATES_AVAILABLE</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_srq_mask</span><span class="p">(</span><span class="n">SrqMask</span><span class="o">.</span><span class="n">DOING_STATE_CHANGE</span><span class="p">)</span>  <span class="c1"># Enable SRQs to wait until written to NVRAM</span>
@@ -1253,11 +1280,7 @@
 <span class="sd">            If test_error is set to True and there was an error processing the command.</span>
 <span class="sd">        """</span>
         <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">"GSRQ"</span><span class="p">,</span> <span class="n">test_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid reply received. Expected an integer, but received: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">_parse_int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">SrqMask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span></div>
 
 
@@ -1312,7 +1335,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">fluke5440b_async v1.0.4.dev15 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">fluke5440b_async v1.0.4.dev16 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">fluke5440b_async.fluke_5440b</a></li> 
       </ul>
