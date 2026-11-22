@@ -2,14 +2,14 @@
 
 [Full report](https://htmlpreview.github.io/?https://github.com/PatrickBaus/pyAsyncFluke5440B/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
-| Name                              |    Stmts |     Miss |   Branch |   BrPart |   Cover |   Missing |
-|---------------------------------- | -------: | -------: | -------: | -------: | ------: | --------: |
-| fluke5440b\_async/\_\_init\_\_.py |        5 |        0 |        0 |        0 |    100% |           |
-| fluke5440b\_async/enums.py        |      161 |        0 |        0 |        0 |    100% |           |
-| fluke5440b\_async/errors.py       |       10 |        0 |        0 |        0 |    100% |           |
-| fluke5440b\_async/flags.py        |       23 |        0 |        0 |        0 |    100% |           |
-| fluke5440b\_async/fluke\_5440b.py |      402 |       15 |      112 |       14 |     94% |224, 341, 566, 590, 668, 712-\>719, 715, 720-\>722, 723-726, 802-803, 858-\>853, 866, 897-\>892, 905, 936-\>931, 1001 |
-| **TOTAL**                         |  **601** |   **15** |  **112** |   **14** | **96%** |           |
+| Name                              |    Stmts |     Miss |   Branch |   BrPart |    Cover |   Missing |
+|---------------------------------- | -------: | -------: | -------: | -------: | -------: | --------: |
+| fluke5440b\_async/\_\_init\_\_.py |        5 |        0 |        0 |        0 |     100% |           |
+| fluke5440b\_async/enums.py        |      161 |        0 |        0 |        0 |     100% |           |
+| fluke5440b\_async/errors.py       |       10 |        0 |        0 |        0 |     100% |           |
+| fluke5440b\_async/flags.py        |       23 |        0 |        0 |        0 |     100% |           |
+| fluke5440b\_async/fluke\_5440b.py |      402 |        0 |      112 |        0 |     100% |           |
+| **TOTAL**                         |  **601** |    **0** |  **112** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge
