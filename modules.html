@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Module Documentation &#8212; fluke5440b_async v1.0.4.dev17 documentation</title>
+    <title>Module Documentation &#8212; fluke5440b_async v1.0.4.dev18 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/nature.css?v=279e0f84" />
     <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=3bc2df39" />
-    <script src="_static/documentation_options.js?v=e20b50ce"></script>
+    <script src="_static/documentation_options.js?v=0a11f30c"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -32,7 +32,7 @@
         <li class="right" >
           <a href="readme.html" title="Readme"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">fluke5440b_async v1.0.4.dev17 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluke5440b_async v1.0.4.dev18 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Module Documentation</a></li> 
       </ul>
     </div>  
@@ -70,9 +70,20 @@ of the internal state.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fluke5440b_async.Fluke_5440B.acal">
-<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">acal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.acal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.acal" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">acal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">780</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.acal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.acal" title="Link to this definition">¶</a></dt>
 <dd><p>Run the internal calibration routine. It will take about 6.5 minutes during which the instrument hardware is
 blocked. See page 3-2 of the operator manual for details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>default=780</em>) – The time in seconds the calibration may take, about twice its usual duration. Set to None to wait forever.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#fluke5440b_async.errors.DeviceError" title="fluke5440b_async.errors.DeviceError"><strong>DeviceError</strong></a> – Raised if there was an error processing the command or the instrument reports a fault.</p></li>
+<li><p><strong>TimeoutError</strong> – Raised if the calibration did not finish within the timeout.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -299,36 +310,54 @@ and <a class="reference internal" href="#fluke5440b_async.Fluke_5440B.selftest_h
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fluke5440b_async.Fluke_5440B.selftest_analog">
-<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">selftest_analog</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.selftest_analog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.selftest_analog" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">selftest_analog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">480</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.selftest_analog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.selftest_analog" title="Link to this definition">¶</a></dt>
 <dd><p>Test the ADC, the low voltage part and the oven. It will take about 4 minutes during which the instrument
 hardware is blocked. See page 3-19 of the operator manual for details.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#fluke5440b_async.errors.DeviceError" title="fluke5440b_async.errors.DeviceError"><strong>DeviceError</strong></a> – Raised if there was an error processing the command.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>default=480</em>) – The time in seconds the self-test may take, about twice its usual duration. Set to None to wait forever.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#fluke5440b_async.errors.DeviceError" title="fluke5440b_async.errors.DeviceError"><strong>DeviceError</strong></a> – Raised if there was an error processing the command.</p></li>
+<li><p><strong>TimeoutError</strong> – Raised if the self-test did not finish within the timeout.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fluke5440b_async.Fluke_5440B.selftest_digital">
-<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">selftest_digital</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.selftest_digital"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.selftest_digital" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">selftest_digital</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.selftest_digital"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.selftest_digital" title="Link to this definition">¶</a></dt>
 <dd><p>Test the main CPU, the front panel CPU and the guard CPU. It will take about 5 seconds during which the
 instrument hardware is blocked. See page 3-19 of the operator manual for details.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#fluke5440b_async.errors.DeviceError" title="fluke5440b_async.errors.DeviceError"><strong>DeviceError</strong></a> – Raised if there was an error processing the command.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>default=10</em>) – The time in seconds the self-test may take, about twice its usual duration. Set to None to wait forever.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#fluke5440b_async.errors.DeviceError" title="fluke5440b_async.errors.DeviceError"><strong>DeviceError</strong></a> – Raised if there was an error processing the command.</p></li>
+<li><p><strong>TimeoutError</strong> – Raised if the self-test did not finish within the timeout.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fluke5440b_async.Fluke_5440B.selftest_hv">
-<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">selftest_hv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.selftest_hv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.selftest_hv" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">selftest_hv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">120</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/fluke5440b_async/fluke_5440b.html#Fluke_5440B.selftest_hv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.Fluke_5440B.selftest_hv" title="Link to this definition">¶</a></dt>
 <dd><p>Test the ADC and the high voltage part. It will take about 1 minute during which the instrument hardware is
 blocked. See page 3-20 of the operator manual for details.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#fluke5440b_async.errors.DeviceError" title="fluke5440b_async.errors.DeviceError"><strong>DeviceError</strong></a> – Raised if there was an error processing the command.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><em>default=120</em>) – The time in seconds the self-test may take, about twice its usual duration. Set to None to wait forever.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#fluke5440b_async.errors.DeviceError" title="fluke5440b_async.errors.DeviceError"><strong>DeviceError</strong></a> – Raised if there was an error processing the command.</p></li>
+<li><p><strong>TimeoutError</strong> – Raised if the self-test did not finish within the timeout.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1597,7 +1626,7 @@ Fluke 5220A transconductance amplifier.</p>
 
 <dl class="py exception">
 <dt class="sig sig-object py" id="fluke5440b_async.errors.SelftestError">
-<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fluke5440b_async.errors.</span></span><span class="sig-name descname"><span class="pre">SelftestError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">selftest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fluke5440b_async.enums.SelfTestErrorCode" title="fluke5440b_async.enums.SelfTestErrorCode"><span class="pre">SelfTestErrorCode</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluke5440b_async/errors.html#SelftestError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.errors.SelftestError" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">fluke5440b_async.errors.</span></span><span class="sig-name descname"><span class="pre">SelftestError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">selftest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#fluke5440b_async.enums.SelfTestErrorCode" title="fluke5440b_async.enums.SelfTestErrorCode"><span class="pre">SelfTestErrorCode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/fluke5440b_async/errors.html#SelftestError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#fluke5440b_async.errors.SelftestError" title="Link to this definition">¶</a></dt>
 <dd><p>The device returned an error during self-test. See page 4-8 of the service manual for details.</p>
 </dd></dl>
 
@@ -1946,7 +1975,7 @@ Fluke 5220A transconductance amplifier.</p>
         <li class="right" >
           <a href="readme.html" title="Readme"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">fluke5440b_async v1.0.4.dev17 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">fluke5440b_async v1.0.4.dev18 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Module Documentation</a></li> 
       </ul>
     </div>
