@@ -407,11 +407,11 @@ def test_switches(method: str, enabled: bool, command: str) -> None:
     ],
 )
 def test_invalid_terminal_mode(method: str, code: ErrorCode) -> None:
-    """A sense or guard mode not allowed by the instrument must raise a TypeError."""
+    """A sense or guard mode not allowed by the instrument must raise a ValueError."""
     conn = FakeConnection()
     conn.error_on = {"I": code.value}
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError, match="mode not allowed"):
         run(conn, lambda device: getattr(device, method)(True))
 
 

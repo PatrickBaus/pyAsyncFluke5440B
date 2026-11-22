@@ -553,6 +553,8 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
         Raises
         ------
+        ValueError
+            Raised if the sense mode is not allowed in the current configuration of the instrument.
         DeviceError
             Raised if there was an error processing the command.
         """
@@ -560,7 +562,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             await self.write("ISNS" if enabled else "ESNS", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.INVALID_SENSE_MODE:
-                raise TypeError("Sense mode not allowed.") from None
+                raise ValueError("Sense mode not allowed.") from None
             raise
 
     async def set_internal_guard(self, enabled: bool) -> None:
@@ -575,6 +577,8 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
 
         Raises
         ------
+        ValueError
+            Raised if the guard mode is not allowed in the current configuration of the instrument.
         DeviceError
             Raised if there was an error processing the command.
         """
@@ -582,7 +586,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             await self.write("IGRD" if enabled else "EGRD", test_error=True)
         except DeviceError as e:
             if e.code == ErrorCode.INVALID_GUARD_MODE:
-                raise TypeError("Guard mode not allowed.") from None
+                raise ValueError("Guard mode not allowed.") from None
             raise
 
     async def set_divider(self, enabled: bool) -> None:
