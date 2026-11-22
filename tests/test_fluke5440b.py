@@ -634,3 +634,26 @@ def test_concurrent_errors() -> None:
     failing, output = run(conn, scenario)
     assert isinstance(failing, DeviceError) and failing.code is ErrorCode.UNKNOWN_COMMAND
     assert output == Decimal("1.5")
+
+
+@pytest.mark.parametrize("reply", ["13", "-1"])
+def test_get_rs232_baud_rate_invalid_reply(reply: str) -> None:
+    """An index outside the table of baud rates must raise a ValueError instead of returning a wrong rate."""
+    conn = FakeConnection()
+    conn.replies["GBDR"] = reply
+
+    with pytest.raises(ValueError, match="baud rate index"):
+        run(conn, lambda device: device.get_rs232_baud_rate())
+
+
+def test_set_rs232_baud_rate_logs_fractional_rate(caplog: pytest.LogCaptureFixture) -> None:
+    """134.5 baud must not be logged as 134."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> None:
+        device.set_log_level(logging.INFO)
+        await device.set_rs232_baud_rate(134.5)
+
+    with caplog.at_level(logging.INFO, logger="fluke5440b_async.fluke_5440b"):
+        run(conn, scenario)
+    assert "Setting baud rate to 134.5 " in caplog.text

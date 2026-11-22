@@ -1055,6 +1055,8 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         result = await self.query("GBDR", test_error=True)
         baud_rate = _parse_int(result)
+        if not 0 <= baud_rate < len(BAUD_RATES_AVAILABLE):
+            raise ValueError(f"Invalid reply received. Expected a baud rate index, but received: {result}")
         return BAUD_RATES_AVAILABLE[baud_rate]
 
     async def set_rs232_baud_rate(self, value: int | float) -> None:
@@ -1073,7 +1075,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         if value not in BAUD_RATES_AVAILABLE:
             raise ValueError(f"Invalid baud rate. It must be one of: {','.join(map(str, BAUD_RATES_AVAILABLE))}.")
         async with self.__lock:
-            self.__logger.info("Setting baud rate to %d and writing to NVRAM. This takes about 1.5 minutes.", value)
+            self.__logger.info("Setting baud rate to %s and writing to NVRAM. This takes about 1.5 minutes.", value)
             try:
                 await self.write(f"SBDR {BAUD_RATES_AVAILABLE.index(value):d}", test_error=True)
                 await self.set_srq_mask(SrqMask.DOING_STATE_CHANGE)  # Enable SRQs to wait until written to NVRAM
