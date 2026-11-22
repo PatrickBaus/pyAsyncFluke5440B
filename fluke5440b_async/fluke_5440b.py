@@ -56,6 +56,16 @@ def _decode_error(code: int) -> ErrorCode | SelfTestErrorCode | int:
         return code
 
 
+def _parse_int(result: str | list[str]) -> int:
+    """Parse an integer reply from the instrument, raising a ValueError with the reply if it is not an integer."""
+    try:
+        if not isinstance(result, str):
+            raise ValueError
+        return int(result)
+    except ValueError:
+        raise ValueError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+
+
 @dataclass(slots=True)
 class CalibrationConstants:  # pylint: disable=too-many-instance-attributes
     """The calibration constants of the Fluke 5440B."""
@@ -334,11 +344,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         async with self.__lock:
             result = await self.query("GTRM", test_error=True)
-            try:
-                assert isinstance(result, str)
-                term = int(result)
-            except TypeError:
-                raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+            term = _parse_int(result)
             return TerminatorType(term)
 
     async def __set_terminator(self, value: TerminatorType) -> None:
@@ -372,11 +378,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if there was an error processing the command.
         """
         result = await self.query("GSEP", test_error=True)
-        try:
-            assert isinstance(result, str)
-            sep = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        sep = _parse_int(result)
         return SeparatorType(sep)
 
     async def __set_separator(self, value: SeparatorType) -> None:
@@ -716,11 +718,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if there was an error processing the command.
         """
         result = await self.query("GSTS", test_error=True)
-        try:
-            assert isinstance(result, str)
-            status = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        status = _parse_int(result)
 
         return StatusFlags(status)
 
@@ -736,11 +734,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         """
         # Do not test for errors, because this is an infinite loop.
         result = await self.query("GERR", test_error=False)
-        try:
-            assert isinstance(result, str)
-            error_code = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        error_code = _parse_int(result)
 
         return error_code
 
@@ -758,11 +752,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             Raised if there was an error processing the command.
         """
         result = await self.query("GDNG", test_error=True)
-        try:
-            assert isinstance(result, str)
-            dev_state = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        dev_state = _parse_int(result)
 
         return DeviceState(dev_state)
 
@@ -1029,11 +1019,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             If test_error is set to True and there was an error processing the command.
         """
         result = await self.query("GBDR", test_error=True)
-        try:
-            assert isinstance(result, str)
-            baud_rate = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        baud_rate = _parse_int(result)
         return BAUD_RATES_AVAILABLE[baud_rate]
 
     async def set_rs232_baud_rate(self, value: int | float) -> None:
@@ -1101,11 +1087,7 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
             If test_error is set to True and there was an error processing the command.
         """
         result = await self.query("GSRQ", test_error=True)
-        try:
-            assert isinstance(result, str)
-            mask = int(result)
-        except TypeError:
-            raise TypeError(f"Invalid reply received. Expected an integer, but received: {result}") from None
+        mask = _parse_int(result)
         return SrqMask(mask)
 
     async def set_srq_mask(self, value: SrqMask) -> None:

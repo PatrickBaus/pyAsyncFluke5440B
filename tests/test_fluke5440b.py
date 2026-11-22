@@ -48,6 +48,7 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
             "GCLM": "0.02,-0.02",
             "GBDR": "12",
         }
+        self.overrides: dict[str, str] = {}  # Replies by command header, these take precedence over all other replies
         self.output_buffer: list[bytes] = []
         self.error_on: dict[str, int] = {}  # Command prefix -> error code raised by the instrument
         self.error = 0
@@ -84,7 +85,9 @@ class FakeConnection:  # pylint: disable=missing-function-docstring,too-many-ins
             for prefix, code in self.error_on.items():
                 if cmd.startswith(prefix):
                     self.error = code
-            if header == "GERR":
+            if header in self.overrides:
+                replies.append(self.overrides[header])
+            elif header == "GERR":
                 replies.append(str(self.error))
                 self.error = 0
             elif header == "GDNG":
@@ -581,3 +584,28 @@ def test_set_log_level() -> None:
 
     run(FakeConnection(), scenario)
     assert logging.getLogger("fluke5440b_async.fluke_5440b").level == logging.DEBUG
+
+
+@pytest.mark.parametrize(
+    "method, header",
+    [
+        ("get_status", "GSTS"),
+        ("get_state", "GDNG"),
+        ("get_error", "GERR"),
+        ("get_terminator", "GTRM"),
+        ("get_separator", "GSEP"),
+        ("get_srq_mask", "GSRQ"),
+        ("get_rs232_baud_rate", "GBDR"),
+    ],
+)
+@pytest.mark.parametrize("reply", ["junk", "1,2"])
+def test_invalid_integer_reply(method: str, header: str, reply: str) -> None:
+    """A reply that is not a single integer must raise a ValueError naming the reply."""
+    conn = FakeConnection()
+
+    async def scenario(device: Fluke_5440B) -> Any:
+        conn.overrides[header] = reply
+        return await getattr(device, method)()
+
+    with pytest.raises(ValueError, match="Invalid reply received"):
+        run(conn, scenario)
