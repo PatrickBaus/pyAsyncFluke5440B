@@ -1,0 +1,14 @@
+# Configuration for zizmor, see https://docs.zizmor.sh/configuration/
+rules:
+  # The "$/" self-repository syntax is new (July 2026) and not yet understood by tools like actionlint.
+  # Keep using "./" for the local reusable workflow.
+  self-repository:
+    disable: true
+  # Uploads still authenticate with API tokens. Remove this once Trusted Publishing is configured on PyPI and TestPyPI.
+  use-trusted-publishing:
+    ignore:
+      - publish-pypi.yml
+      - publish-test-pypi.yml
+  # Use Dependabot's default cooldown instead of an explicit one.
+  dependabot-cooldown:
+    disable: true

@@ -4,53 +4,64 @@ on:
   push:
     branches: [ "master" ]
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Do not cancel a run while it may be pushing to gh-pages
+  cancel-in-progress: false
 
 jobs:
   build-documentation:
+    name: Build and publish the documentation
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ["3.15"]
+    permissions:
+      # Required to push to the gh-pages branch
+      contents: write
 
     steps:
-    - name: Checkout source repository
-      uses: actions/checkout@v7
-      with:
-        path: master
-    - name: Checkout gh-pages repository
-      uses: actions/checkout@v7
-      with:
-        ref: gh-pages
-        path: gh-pages
-    - name: Set up python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies for testing
-      working-directory: master
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install .[doc]
-    - name: Build documentation
-      working-directory: master/doc
-      run: |
-        make html
-    - name: Commit documentation changes
-      run: |
-        cp -r master/doc/build/html/* gh-pages/
-        cd gh-pages
-        # We need to disable Jekyll, because gh-pages does not copy files/folders with underscores:
-        # https://github.blog/2009-12-29-bypassing-jekyll-on-github-pages/
-        touch .nojekyll
-        git config user.name github-actions
-        git config user.email github-actions@github.com
-        git add .
-        # git commit returns an error if there are no updates, but this is ok
-        git commit -m "Update documentation" -a || true
-    - name: Push documentation changes
-      working-directory: gh-pages
-      run: |
-        git push
+      - name: Checkout source repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: master
+          persist-credentials: false
+          # setuptools-scm derives the version shown in the documentation from the git tags, so fetch them all
+          fetch-depth: 0
+      - name: Checkout gh-pages repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: gh-pages
+          # The credentials are needed to push the documentation in the last step
+          persist-credentials: true  # zizmor: ignore[artipacked]
+      - name: Set up python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.15"
+          cache: pip
+          cache-dependency-path: master/pyproject.toml
+      - name: Install dependencies for the documentation
+        working-directory: master
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install .[doc]
+      - name: Build documentation
+        working-directory: master/doc
+        run: |
+          make html
+      - name: Commit documentation changes
+        run: |
+          cp -r master/doc/build/html/* gh-pages/
+          cd gh-pages
+          # We need to disable Jekyll, because gh-pages does not copy files/folders with underscores:
+          # https://github.blog/2009-12-29-bypassing-jekyll-on-github-pages/
+          touch .nojekyll
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          # git commit returns an error if there are no updates, but this is ok
+          git commit -m "Update documentation" -a || true
+      - name: Push documentation changes
+        working-directory: gh-pages
+        run: |
+          git push

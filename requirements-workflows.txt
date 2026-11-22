@@ -1,0 +1,2 @@
+# Tools used by the GitHub workflows. Dependabot keeps these up to date.
+zizmor==1.32.0
