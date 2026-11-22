@@ -318,11 +318,21 @@ def test_set_output_rounds_to_8_digits(value: int | float | Decimal, command: st
     assert conn.commands[-1] == command
 
 
-def test_set_output_below_resolution() -> None:
-    """Values below the 10 nV resolution are rounded to zero."""
+@pytest.mark.parametrize(
+    "value, command",
+    [
+        (1e-9, "SOUT 0"),
+        (-1e-9, "SOUT 0"),
+        (5e-9, "SOUT 0"),  # Rounded half to even
+        (6e-9, "SOUT 0.00000001"),
+        (-6e-9, "SOUT -0.00000001"),
+    ],
+)
+def test_set_output_below_resolution(value: float, command: str) -> None:
+    """Values below the 10 nV resolution are rounded to zero and sent like an exact zero."""
     conn = FakeConnection()
-    run(conn, lambda device: device.set_output(1e-9))
-    assert Decimal(conn.commands[-1].removeprefix("SOUT ")) == 0
+    run(conn, lambda device: device.set_output(value))
+    assert conn.commands[-1] == command
 
 
 @pytest.mark.parametrize("value", [1500.1, -1500.1])

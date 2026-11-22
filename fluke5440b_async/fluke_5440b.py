@@ -510,8 +510,12 @@ class Fluke_5440B:  # noqa pylint: disable=too-many-public-methods,invalid-name,
         # Round (not truncate) to 8 significant digits, but never finer than 10 nV (1e-8).
         exponent = max(number.adjusted() - 7, -8)
         result = number.quantize(Decimal(1).scaleb(exponent), rounding=ROUND_HALF_EVEN)
-        if result.adjusted() > number.adjusted():
-            # Rounding carried into a new digit (e.g. 9.99999999 -> 10.0000000), so drop one more decimal place
+        if result == 0:
+            # Below the resolution. Send it like an exact zero, without a sign.
+            return "0"
+        if result.adjusted() - exponent >= 8:
+            # Rounding carried into a 9th significant digit (e.g. 9.99999999 -> 10.0000000), so drop one more decimal
+            # place. This does not apply to a carry at the resolution limit (e.g. 6 nV -> 10 nV).
             result = number.quantize(Decimal(1).scaleb(exponent + 1), rounding=ROUND_HALF_EVEN)
         return f"{result:f}"
 
